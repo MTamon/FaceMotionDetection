@@ -8,11 +8,10 @@ import cv2
 mp_module = mp.solutions.face_detection
 
 class Detector():
-    def __init__(self, min_detection_confidence, model_selection, frame_step=1, box_ratio=1.5) -> None:
+    def __init__(self, min_detection_confidence, model_selection, box_ratio=1.5) -> None:
         
         self.min_detection_confidence = min_detection_confidence
         self.model_selection = model_selection
-        self.frame_step = frame_step
         self.box_ratio = box_ratio
         
         self.detector = mp_module.FaceDetection(
@@ -20,15 +19,15 @@ class Detector():
                 model_selection=self.model_selection
         )
         
-    def __call__(self, frame: ndarray) -> List[dict]:
+    def __call__(self, frame: ndarray) -> list:
         return self.detection(frame)
     
-    def detection(self, frame: ndarray) -> List[dict]:
+    def detection(self, frame: ndarray) -> list:
         imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         result_ditection = self.detector.process((imgRGB))
         if not result_ditection.detections:
-            return []
+            return [], result_ditection
         
         bboxes = []
         for detection in result_ditection.detections:
@@ -53,4 +52,4 @@ class Detector():
             
             bboxes.append({"xmin": xmin, "xmax": xmax, "width": width, "ymin": ymin, "ymax": ymax, "height": height})
             
-        return bboxes
+        return bboxes, result_ditection

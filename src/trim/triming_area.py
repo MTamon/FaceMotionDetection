@@ -1,6 +1,5 @@
 from logging import Logger
-from typing import Dict, Tuple, List
-from numpy import append
+from typing import Tuple, List
 from tqdm import tqdm
 
 from .face_detection import Detector
@@ -40,7 +39,6 @@ class TrimFace():
         self.detector = Detector(
             min_detection_confidence,
             model_selection,
-            frame_step,
             box_ratio
         )
         

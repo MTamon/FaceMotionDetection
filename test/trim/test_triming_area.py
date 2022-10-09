@@ -20,7 +20,7 @@ def process(logger, paths):
         i_s = math.ceil(len(video)/10000)
         visualize = True
         trimer = TrimFace(min_detection_confidence=0.7, model_selection=1, logger=logger, \
-            frame_step=1, box_ratio=1.1, track_volatility=0.3, lost_volatility=0.1, size_volatility=0.03, threshold=0.3, overlap=0.9, \
+            frame_step=1, box_ratio=1.1, track_volatility=0.5, lost_volatility=0.1, size_volatility=0.03, threshold=0.3, overlap=0.9, \
                 integrate_step=i_s, integrate_volatility=0.4, use_tracking=True, \
                     prohibit_integrate=0.7, size_limit_rate=4, gc=0.03, gc_term=100, gc_success=0.1, lost_track=1, visualize=visualize)
         
@@ -46,13 +46,13 @@ def process(logger, paths):
 if __name__ == "__main__":
     logger = set_logger("TEST-TRIM", "log/test/test-trim.log")
     paths = [
-        ('./data/test/webcame.mp4', 'test/trim/out/webcame.mp4', 'test/trim/out/webcame.area'),
-        ('./data/test/midol1s.mp4', 'test/trim/out/midol1s.mp4', 'test/trim/out/midol1s.area'),
-        ('./data/test/short1.mp4', 'test/trim/out/short1.mp4', 'test/trim/out/short1.area'),
-        ('./data/test/short2.mp4', 'test/trim/out/short2.mp4', 'test/trim/out/short2.area'),
+        # ('./data/test/webcame.mp4', 'test/trim/out/webcame.mp4', 'test/trim/out/webcame.area'),
+        # ('./data/test/midol1s.mp4', 'test/trim/out/midol1s.mp4', 'test/trim/out/midol1s.area'),
+        # ('./data/test/short1.mp4', 'test/trim/out/short1.mp4', 'test/trim/out/short1.area'),
+        # ('./data/test/short2.mp4', 'test/trim/out/short2.mp4', 'test/trim/out/short2.area'),
         ('./data/test/test1.mp4', 'test/trim/out/test1.mp4', 'test/trim/out/test1.area'),
-        ('./data/test/test2.mp4', 'test/trim/out/test2.mp4', 'test/trim/out/test2.area'),
-        ('./data/test/test3.mp4', 'test/trim/out/test3.mp4', 'test/trim/out/test3.area'),
-        ('./data/test/test4.mp4', 'test/trim/out/test4.mp4', 'test/trim/out/test4.area')
+        # ('./data/test/test2.mp4', 'test/trim/out/test2.mp4', 'test/trim/out/test2.area'),
+        # ('./data/test/test3.mp4', 'test/trim/out/test3.mp4', 'test/trim/out/test3.area'),
+        # ('./data/test/test4.mp4', 'test/trim/out/test4.mp4', 'test/trim/out/test4.area')
     ]
     process(logger, paths)

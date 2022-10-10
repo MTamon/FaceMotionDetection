@@ -1,4 +1,5 @@
 from logging import Logger
+import math
 from typing import Tuple, List
 from tqdm import tqdm
 
@@ -7,10 +8,13 @@ from src.utils import Video
 from src.visualizer import Visualizer
 
 
+PRIMAL_STEP = 5.
+
 class TrimFace():
     def __init__(self, min_detection_confidence, model_selection, logger: Logger,
-        frame_step=1, box_ratio=1.5, track_volatility=0.3, lost_volatility=0.5, size_volatility=0.3, threshold=0.3, overlap=0.8, 
-        integrate_step=1, integrate_volatility=0.3, use_tracking=False, prohibit_integrate=0.7, size_limit_rate=4,
+        frame_step=1, box_ratio=1.5, 
+        track_volatility=0.3, lost_volatility=0.5, size_volatility=0.03, sub_track_volatility=1.0, sub_size_volatility=0.5, threshold=0.3, 
+        overlap=0.8, integrate_step=1, integrate_volatility=0.3, use_tracking=False, prohibit_integrate=0.7, size_limit_rate=4,
         gc=0.01, gc_term=1000, gc_success=0.05, lost_track=1, visualize=False) -> None:
         
         self.min_detection_confidence = min_detection_confidence
@@ -21,6 +25,8 @@ class TrimFace():
         self.track_volatility = track_volatility
         self.lost_volatility = lost_volatility
         self.size_volatility = size_volatility
+        self.sub_track_volatility = sub_track_volatility
+        self.sub_size_volatility = sub_size_volatility
         self.threshold = threshold
         self.overlap = overlap
         self.integrate_step = integrate_step
@@ -153,8 +159,9 @@ class TrimFace():
             new_area["height_min"] = min(area1["height_min"], area2["height_min"])
             
             new_area["success"] = area1["success"] + area2["success"]
-            new_area["prev"] = area1["prev"] if not area1["prev"] is None else area2["prev"]
             new_area["update"] = area1["update"] or area2["update"]
+            new_area["prev"] = area1["prev"] if not area1["prev"] is None else area2["prev"]
+            new_area["final_detect"] = area1["final_detect"] if area1["lost_count"] < area2["lost_count"] else area2["final_detect"]
             
             new_area["garbage_collect"] = area1["garbage_collect"] or area2["garbage_collect"]
             new_area["gc_update"] = area1["gc_update"] + area2["gc_update"]
@@ -226,7 +233,6 @@ class TrimFace():
         
         new_face_area = []
         skip_id = []
-        integrated_flg = False
         for i, area in enumerate(face_area):
             if i in skip_id: # integrated
                 continue
@@ -403,50 +409,74 @@ class TrimFace():
         compatible_face_id = []
         
         for id, area in enumerate(face_area):
-            prev_area = area["prev"]
+            target = None
+            final_detect = None
+            volatility1 = 0.0
+            volatility2 = 0.0
+            mode = "track"
             
-            if prev_area is None or not self.use_tracking:
-                volatility = self.lost_volatility
+            if area["prev"] is None or not self.use_tracking:
+                mode = "lost"
                 
-                # compare coordinates
-                if not self.judge_coordinates(face, area, volatility):
-                    continue
+                target = area
+                final_detect = area["final_detect"].copy()
+                volatility1 = self.lost_volatility
+                volatility2 = self.size_volatility
                 
-                # compare size
-                if not self.judge_size(face, area, self.size_volatility):
-                    continue
-                
+                # add keys
+                final_detect["xmax"] = final_detect["xmin"]
+                final_detect["ymax"] = final_detect["ymin"]
+                final_detect["width_min"] = final_detect["width"]
+                final_detect["width_max"] = final_detect["width"]
+                final_detect["height_min"] = final_detect["height"]
+                final_detect["height_max"] = final_detect["height"]
             else:
-                volatility = self.track_volatility
+                mode = "track"
                 
-                prev_area = prev_area.copy()
+                target = area["prev"].copy()
+                volatility1 = self.track_volatility
+                volatility2 = self.track_volatility
                 
-                # compare coordinates
-                prev_area["xmax"] = prev_area["xmin"]
-                prev_area["ymax"] = prev_area["ymin"]
-                if not self.judge_coordinates(face, prev_area, volatility):
+                # add keys
+                target["xmax"] = target["xmin"]
+                target["ymax"] = target["ymin"]
+                target["width_min"] = target["width"]
+                target["width_max"] = target["width"]
+                target["height_min"] = target["height"]
+                target["height_max"] = target["height"]
+                
+            # compare with final detect
+            if not final_detect is None and mode == "lost":
+                if not self.judge_coordinates(face, final_detect, self.sub_track_volatility):
+                    pass
+                elif not self.judge_size(face, final_detect, self.sub_size_volatility):
+                    pass
+                else:
+                    compatible_face_id.append((id, False, True))
                     continue
                 
-                # compare size
-                prev_area["width_min"] = prev_area["width"]
-                prev_area["width_max"] = prev_area["width"]
-                prev_area["height_min"] = prev_area["height"]
-                prev_area["height_max"] = prev_area["height"]
+            # compare coordinates
+            if not self.judge_coordinates(face, area, volatility1):
+                continue
+            
+            # compare size
+            if not self.judge_size(face, area, volatility2):
+                continue
                 
-                if not self.judge_size(face, prev_area, volatility):
-                    continue
-                
-            compatible_face_id.append((id, not prev_area is None))
+            compatible_face_id.append((id, not area["prev"] is None, False))
             
         # process for case which more than one candidate is generated
         if len(compatible_face_id) >= 1:
             candidates = []
+            final_dtect_candidates = []
             lost_candidates = []
             
             # primary not "prev" is None.
             for candidate in compatible_face_id:
                 if candidate[1]:
                     candidates.append(candidate[0])
+                elif candidate[2]:
+                    final_dtect_candidates.append(candidate[0])
                 else:
                     lost_candidates.append(candidate[0])
             
@@ -454,9 +484,26 @@ class TrimFace():
                 # case rest more than one candidates: second, primary size similality
                 _candidates = []
                 for id in candidates:
-                    dist_x = abs(1.-face_area[id]["prev"]["width"]/face["width"])
-                    dist_y = abs(1.-face_area[id]["prev"]["height"]/face["height"])
-                    dist = (dist_x**2 + dist_y**2)
+                    
+                    area_width = face_area[id]["prev"]["width"]
+                    area_height = face_area[id]["prev"]["height"]
+                    dist_w = abs(math.log(area_width/face["width"]))
+                    dist_h = abs(math.log(area_height/face["height"]))
+                    dist = (dist_w**2 + dist_h**2)
+                    _candidates = self.insertion_sort(_candidates, (id, dist))
+                    
+                compatible_face_id = _candidates
+                
+            elif len(final_dtect_candidates) >= 1:
+                # case rest more than one final_detect candidates: second, primary size similality
+                _candidates = []
+                for id in final_dtect_candidates:
+                    
+                    area_width = face_area[id]["final_detect"]["width"]
+                    area_height = face_area[id]["final_detect"]["height"]
+                    dist_w = abs(math.log(area_width/face["width"]))
+                    dist_h = abs(math.log(area_height/face["height"]))
+                    dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * 1
                     _candidates = self.insertion_sort(_candidates, (id, dist))
                     
                 compatible_face_id = _candidates
@@ -465,12 +512,13 @@ class TrimFace():
                 # case rest no candidates: second, primary size similality
                 _candidates = []
                 for id in lost_candidates:
+                    
                     area = face_area[id]
-                    area_width = (area["width_max"] + area["width_min"])/2.
-                    area_height = (area["height_max"] + area["height_min"])/2.
-                    dist_x = abs(1.-area_width/face["width"])
-                    dist_y = abs(1.-area_height/face["height"])
-                    dist = (dist_x**2 + dist_y**2)
+                    area_width = area["width_total"] / area["success"]
+                    area_height = area["height_total"] / area["success"]
+                    dist_w = abs(math.log(area_width/face["width"]))
+                    dist_h = abs(math.log(area_height/face["height"]))
+                    dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * 2
                     _candidates = self.insertion_sort(_candidates, (id, dist))
                 
                 compatible_face_id = _candidates
@@ -479,7 +527,7 @@ class TrimFace():
             compatible_face_id = None
         
         return compatible_face_id
-    def judge_coordinates(self, face, area: dict, volatility):
+    def judge_coordinates(self, face: dict, area: dict, volatility: float):
         radians_x = area["xmax"] - area["xmin"]
         radians_y = area["ymax"] - area["ymin"]
         
@@ -501,7 +549,7 @@ class TrimFace():
                 
         return result_x and result_y
     
-    def judge_size(self, face, area, volatility):
+    def judge_size(self, face: dict, area: dict, volatility: float):
         result_width = \
             (face["width"] > area["width_min"]*(1. - volatility)) \
                 and (face["width"] < area["width_max"]*(1. + volatility))

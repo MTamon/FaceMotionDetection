@@ -1,4 +1,3 @@
-from typing import List
 from numpy import ndarray
 
 import mediapipe as mp

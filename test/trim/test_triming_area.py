@@ -1,17 +1,11 @@
-import math
-
-from pkg_resources import compatible_platforms
 import _path
 
+import math
 from src.trim.triming_area import TrimFace
 from src.utils import Video
 from src.visualizer import Visualizer
 from src.io import write_face_area, load_face_area
 from logger_gen import set_logger
-
-from tqdm import tqdm
-import cv2
-import pickle
 
 def process(logger, paths):
     for input, output, area_path in paths:
@@ -35,15 +29,6 @@ def process(logger, paths):
         write_face_area(area_path, face_area)
         face_area = load_face_area(area_path)
         logger.info('area num : ' + str(len(compatible_face)))
-        
-        continue
-
-        
-        # visualize result
-        video.reset()
-        
-        logger.info("draw result for video")
-        Visualizer.face_area(face_area, video)
     
 if __name__ == "__main__":
     logger = set_logger("TEST-TRIM", "log/test/test-trim.log")

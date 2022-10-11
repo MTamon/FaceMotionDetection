@@ -1,0 +1,2 @@
+class InformationDissatisfiedError(Exception):
+    pass

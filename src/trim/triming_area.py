@@ -11,17 +11,18 @@ from src.visualizer import Visualizer
 PRIMAL_STEP = 5.
 
 class TrimFace():
-    def __init__(self, min_detection_confidence, model_selection, logger: Logger,
-        frame_step=1, box_ratio=1.5, 
-        track_volatility=0.3, lost_volatility=0.5, size_volatility=0.03, sub_track_volatility=1.0, sub_size_volatility=0.5, threshold=0.3, 
-        overlap=0.8, integrate_step=1, integrate_volatility=0.3, use_tracking=False, prohibit_integrate=0.7, size_limit_rate=4,
-        gc=0.01, gc_term=1000, gc_success=0.05, lost_track=1, visualize=False) -> None:
+    def __init__(self, logger: Logger, min_detection_confidence=0.7, model_selection=1,
+        frame_step=1, box_ratio=1.1, 
+        track_volatility=0.3, lost_volatility=0.1, size_volatility=0.03, sub_track_volatility=1.0, sub_size_volatility=0.5, threshold=0.3, 
+        overlap=0.9, integrate_step=1, integrate_volatility=0.4, use_tracking=True, prohibit_integrate=0.7, 
+        size_limit_rate=4, gc=0.03, gc_term=100, gc_success=0.1, lost_track=2, visualize=False) -> None:
         
         self.min_detection_confidence = min_detection_confidence
         self.model_selection = model_selection
         self.logger = logger
         self.frame_step = frame_step
         self.box_ratio = box_ratio
+        
         self.track_volatility = track_volatility
         self.lost_volatility = lost_volatility
         self.size_volatility = size_volatility
@@ -83,10 +84,7 @@ class TrimFace():
                 
                 if id is None:
                     # add new area
-                    area_dict = {"xmin": face["xmin"], "ymin": face["ymin"], "xmax": face["xmin"], "ymax": face["ymin"], "width": face["width"], "height": face["height"], \
-                        "width_min": face["width"], "height_min": face["height"], "width_max": face["width"], "height_max": face["height"], \
-                            "success": 1, "update": True, "garbage_collect": False, "gc_update": 0, "lost_count": 0, "width_total": face["width"], "height_total": face["height"], \
-                                "prev": face, "final_detect": face,}
+                    area_dict = self.face2area(face, i)
                     face_area.append(area_dict)
                 else:
                     # update existed area
@@ -98,26 +96,16 @@ class TrimFace():
                 while len(_face_area) != len(face_area):
                     face_area = _face_area
                     _face_area = self.integrate_area(face_area)
-                
+                    
             # garbage collection
             if self.progress % self.gc_term == 0:
-                new_face_area = []
-                for area in face_area:
-                    if area["garbage_collect"]:
-                        if area["success"]/self.progress < self.gc_success:
-                            if area["gc_update"]/self.gc_term < self.gc:
-                                continue
-                    area["garbage_collect"] = True
-                    area["gc_update"] = 0
-                    new_face_area.append(area.copy())
-                face_area = new_face_area
-                    
+                face_area = self.garbage_collection(face_area)
+                
             # Areas that were not updated have their past information erased.
             for area in face_area:
+                area["lost_count"] += 1
                 if not area["update"]:
-                    if area["lost_count"] <= self.lost_track:
-                        area["lost_count"] += 1
-                    else:
+                    if area["lost_count"] > self.lost_track:
                         area["prev"] = None
                     
             # visualize this roop's result
@@ -143,42 +131,53 @@ class TrimFace():
         self.logger.info(f'all area : {len(face_area)}')
                     
         return [compatible_area, face_area]
+    
+    def combine_area(self, area1: dict, area2: dict) -> dict:
+        comb_area = area1.copy()
+        comb_area["birthtime"] = min(area1["birthtime"], area2["birthtime"])
+        
+        comb_area["xmin"] = min(area1["xmin"], area2["xmin"])
+        comb_area["ymin"] = min(area1["ymin"], area2["ymin"])
+        comb_area["xmax"] = max(area1["xmax"], area2["xmax"])
+        comb_area["ymax"] = max(area1["ymax"], area2["ymax"])
+        
+        comb_area["width_max"] = max(area1["width_max"], area2["width_max"])
+        comb_area["height_max"] = max(area1["height_max"], area2["height_max"])
+        comb_area["width_min"] = min(area1["width_min"], area2["width_min"])
+        comb_area["height_min"] = min(area1["height_min"], area2["height_min"])
+        
+        comb_area["success"] = area1["success"] + area2["success"]
+        comb_area["update"] = area1["update"] or area2["update"]
+        comb_area["prev"] = area1["prev"] if area1["lost_count"] < area2["lost_count"] else area2["prev"]
+        comb_area["final_detect"] = area1["final_detect"] if area1["lost_count"] < area2["lost_count"] else area2["final_detect"]
+        
+        comb_area["garbage_collect"] = area1["garbage_collect"] or area2["garbage_collect"]
+        comb_area["gc_update"] = area1["gc_update"] + area2["gc_update"]
+        comb_area["lost_count"] = min(area1["lost_count"], area2["lost_count"])
+        
+        comb_area["width_total"] = area1["width_total"] + area2["width_total"]            
+        comb_area["height_total"] = area1["height_total"] + area2["height_total"]
+        
+        comb_area["average_wh"]["width"] = comb_area["width_total"] / comb_area["success"]
+        comb_area["average_wh"]["height"] = comb_area["height_total"] / comb_area["success"]
+        
+        x_up_lim1 = area1["xmin"] + area1["width"] 
+        y_up_lim1 = area1["ymin"] + area1["height"]
+        x_up_lim2 = area2["xmin"] + area2["width"] 
+        y_up_lim2 = area2["ymin"] + area2["height"]
+        x_lim = max(x_up_lim1, x_up_lim2)
+        y_lim = max(y_up_lim1, y_up_lim2)
+        
+        comb_area["width"] = x_lim - comb_area["xmin"]
+        comb_area["height"] = y_lim - comb_area["ymin"]
+        
+        return comb_area
                     
     def integrate_area(self, face_area: List[dict]) -> List[dict]:
         
         def overlaped(area1: dict, area2: dict) -> dict:
-            new_area = area1.copy()
-            new_area["xmin"] = min(area1["xmin"], area2["xmin"])
-            new_area["ymin"] = min(area1["ymin"], area2["ymin"])
-            new_area["xmax"] = max(area1["xmax"], area2["xmax"])
-            new_area["ymax"] = max(area1["ymax"], area2["ymax"])
             
-            new_area["width_max"] = max(area1["width_max"], area2["width_max"])
-            new_area["height_max"] = max(area1["height_max"], area2["height_max"])
-            new_area["width_min"] = min(area1["width_min"], area2["width_min"])
-            new_area["height_min"] = min(area1["height_min"], area2["height_min"])
-            
-            new_area["success"] = area1["success"] + area2["success"]
-            new_area["update"] = area1["update"] or area2["update"]
-            new_area["prev"] = area1["prev"] if not area1["prev"] is None else area2["prev"]
-            new_area["final_detect"] = area1["final_detect"] if area1["lost_count"] < area2["lost_count"] else area2["final_detect"]
-            
-            new_area["garbage_collect"] = area1["garbage_collect"] or area2["garbage_collect"]
-            new_area["gc_update"] = area1["gc_update"] + area2["gc_update"]
-            new_area["lost_count"] = min(area1["lost_count"], area2["lost_count"])
-            
-            new_area["width_total"] = area1["width_total"] + area2["width_total"]            
-            new_area["height_total"] = area1["height_total"] + area2["height_total"]
-            
-            x_up_lim1 = area1["xmin"] + area1["width"] 
-            y_up_lim1 = area1["ymin"] + area1["height"]
-            x_up_lim2 = area2["xmin"] + area2["width"] 
-            y_up_lim2 = area2["ymin"] + area2["height"]
-            x_lim = max(x_up_lim1, x_up_lim2)
-            y_lim = max(y_up_lim1, y_up_lim2)
-            
-            new_area["width"] = x_lim - new_area["xmin"]
-            new_area["height"] = y_lim - new_area["ymin"]
+            new_area = self.combine_area(area1, area2)
             
             new_width = (new_area["width_min"] + new_area["width_max"])/2
             new_height = (new_area["height_min"] + new_area["height_max"])/2
@@ -339,60 +338,14 @@ class TrimFace():
         return _table
                     
     def update_area_dict(self, area: dict, face) -> dict:
-        new_area = area.copy()
-        if face["xmin"] < area["xmin"]:
-            new_area["xmin"] = face["xmin"]
-            
-            dif = area["xmin"] - face["xmin"]
-            new_area["width"] += dif
-            
-        if face["ymin"] < area["ymin"]:
-            new_area["ymin"] = face["ymin"]
-            
-            dif = area["ymin"] - face["ymin"]
-            new_area["height"] += dif
-            
-        if face["xmin"] > area["xmax"]:
-            new_area["xmax"] = face["xmin"]
-            
-        if face["ymin"] > area["ymax"]:
-            new_area["ymax"] = face["ymin"]
-            
-        if face["xmax"] > new_area["xmin"]+new_area["width"]:
-            new_area["width"] = face["xmax"]-new_area["xmin"]
-            
-        if face["ymax"] > new_area["ymin"]+new_area["height"]:
-            new_area["height"] = face["ymax"]-new_area["ymin"]
-            
-        if face["width"] < area["width_min"]:
-            new_area["width_min"] = face["width"]
-            
-        if face["height"] < area["height_min"]:
-            new_area["height_min"] = face["height"]
-            
-        if face["width"] > area["width_max"]:
-            new_area["width_max"] = face["width"]
-            
-        if face["height"] > area["height_max"]:
-            new_area["height_max"] = face["height"]
-            
-        new_area["prev"] = face
-        new_area["final_ditect"] = face
-        new_area["success"] += 1
-        new_area["update"] = True
-        new_area["gc_update"] += 1
-        new_area["lost_count"] = 0
         
-        new_area["width_total"] += face["width"]
-        new_area["height_total"] += face["height"]
-        
+        new_area = self.combine_area(area, self.face2area(face, self.progress-1))
         
         if face["width"] * self.size_limit_rate < new_area["width"] or face["height"] * self.size_limit_rate < new_area["height"]:
             new_area["xmin"] = area["xmin"]
             new_area["ymin"] = area["ymin"]
             new_area["width"] = area["width"]
             new_area["height"] = area["height"]
-            return new_area
             
         return new_area
     
@@ -404,12 +357,54 @@ class TrimFace():
             face (list[float]): List or tuple which have xmin, width, ymin, height
         """
         
-        volatility = 0.
+        def judge_coordinates(face: dict, area: dict, volatility: float):
+            radians_x = area["xmax"] - area["xmin"]
+            radians_y = area["ymax"] - area["ymin"]
+            
+            # for track mode
+            if radians_x == 0 or radians_y == 0:
+                low_lim_x = area["xmin"] - (area["width"] * volatility)/2
+                high_lim_x = area["xmax"] + (area["width"] * volatility)/2
+                low_lim_y = area["ymin"] - (area["height"] * volatility)/2
+                high_lim_y = area["ymax"] + (area["height"] * volatility)/2
+            # for lost, none-track mode
+            else:
+                low_lim_x = area["xmin"] - (radians_x * volatility)/2
+                high_lim_x = area["xmax"] + (radians_x * volatility)/2
+                low_lim_y = area["ymin"] - (radians_y * volatility)/2
+                high_lim_y = area["ymax"] + (radians_y * volatility)/2
+            
+            result_x = (face["xmin"] > low_lim_x) and (face["xmin"] < high_lim_x)
+            result_y = (face["ymin"] > low_lim_y) and (face["ymin"] < high_lim_y)
+                    
+            return result_x and result_y
+
+        def judge_size(face: dict, area: dict, volatility: float):
+            result_width = \
+                (face["width"] > area["width_min"]*(1. - volatility)) \
+                    and (face["width"] < area["width_max"]*(1. + volatility))
+            result_height = \
+                (face["height"] > area["height_min"]*(1. - volatility)) \
+                    and (face["height"] < area["height_max"]*(1. + volatility))
+                    
+            return result_width and result_height
+        
+        def distance_function(face: dict, area: dict, candidates_id: list, ref: str, step: int) -> list:
+            _candidates = []
+            for id in candidates_id:
+                
+                area_width = area[id][ref]["width"]
+                area_height = area[id][ref]["height"]
+                dist_w = abs(math.log(area_width/face["width"]))
+                dist_h = abs(math.log(area_height/face["height"]))
+                dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * step
+                _candidates = self.insertion_sort(_candidates, (id, dist))
+                
+            return _candidates
         
         compatible_face_id = []
         
         for id, area in enumerate(face_area):
-            target = None
             final_detect = None
             volatility1 = 0.0
             volatility2 = 0.0
@@ -418,49 +413,32 @@ class TrimFace():
             if area["prev"] is None or not self.use_tracking:
                 mode = "lost"
                 
-                target = area
-                final_detect = area["final_detect"].copy()
+                final_detect = self.face2area(area["final_detect"].copy(), self.progress-1)
                 volatility1 = self.lost_volatility
                 volatility2 = self.size_volatility
                 
-                # add keys
-                final_detect["xmax"] = final_detect["xmin"]
-                final_detect["ymax"] = final_detect["ymin"]
-                final_detect["width_min"] = final_detect["width"]
-                final_detect["width_max"] = final_detect["width"]
-                final_detect["height_min"] = final_detect["height"]
-                final_detect["height_max"] = final_detect["height"]
             else:
                 mode = "track"
                 
-                target = area["prev"].copy()
                 volatility1 = self.track_volatility
                 volatility2 = self.track_volatility
                 
-                # add keys
-                target["xmax"] = target["xmin"]
-                target["ymax"] = target["ymin"]
-                target["width_min"] = target["width"]
-                target["width_max"] = target["width"]
-                target["height_min"] = target["height"]
-                target["height_max"] = target["height"]
-                
             # compare with final detect
             if not final_detect is None and mode == "lost":
-                if not self.judge_coordinates(face, final_detect, self.sub_track_volatility):
+                if not judge_coordinates(face, final_detect, self.sub_track_volatility):
                     pass
-                elif not self.judge_size(face, final_detect, self.sub_size_volatility):
+                elif not judge_size(face, final_detect, self.sub_size_volatility):
                     pass
                 else:
                     compatible_face_id.append((id, False, True))
                     continue
                 
             # compare coordinates
-            if not self.judge_coordinates(face, area, volatility1):
+            if not judge_coordinates(face, area, volatility1):
                 continue
             
             # compare size
-            if not self.judge_size(face, area, volatility2):
+            if not judge_size(face, area, volatility2):
                 continue
                 
             compatible_face_id.append((id, not area["prev"] is None, False))
@@ -482,82 +460,41 @@ class TrimFace():
             
             if len(candidates) >= 1:
                 # case rest more than one candidates: second, primary size similality
-                _candidates = []
-                for id in candidates:
-                    
-                    area_width = face_area[id]["prev"]["width"]
-                    area_height = face_area[id]["prev"]["height"]
-                    dist_w = abs(math.log(area_width/face["width"]))
-                    dist_h = abs(math.log(area_height/face["height"]))
-                    dist = (dist_w**2 + dist_h**2)
-                    _candidates = self.insertion_sort(_candidates, (id, dist))
-                    
-                compatible_face_id = _candidates
+                compatible_face_id = distance_function(face, face_area, candidates, "prev", 0)
                 
             elif len(final_dtect_candidates) >= 1:
                 # case rest more than one final_detect candidates: second, primary size similality
-                _candidates = []
-                for id in final_dtect_candidates:
-                    
-                    area_width = face_area[id]["final_detect"]["width"]
-                    area_height = face_area[id]["final_detect"]["height"]
-                    dist_w = abs(math.log(area_width/face["width"]))
-                    dist_h = abs(math.log(area_height/face["height"]))
-                    dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * 1
-                    _candidates = self.insertion_sort(_candidates, (id, dist))
-                    
-                compatible_face_id = _candidates
+                compatible_face_id = distance_function(face, face_area, final_dtect_candidates, "final_detect", 1)
                 
             elif len(candidates) == 0:
                 # case rest no candidates: second, primary size similality
-                _candidates = []
-                for id in lost_candidates:
-                    
-                    area = face_area[id]
-                    area_width = area["width_total"] / area["success"]
-                    area_height = area["height_total"] / area["success"]
-                    dist_w = abs(math.log(area_width/face["width"]))
-                    dist_h = abs(math.log(area_height/face["height"]))
-                    dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * 2
-                    _candidates = self.insertion_sort(_candidates, (id, dist))
-                
-                compatible_face_id = _candidates
+                compatible_face_id = distance_function(face, face_area, lost_candidates, "average_wh", 2)
                 
         elif len(compatible_face_id) == 0:
             compatible_face_id = None
         
         return compatible_face_id
-    def judge_coordinates(self, face: dict, area: dict, volatility: float):
-        radians_x = area["xmax"] - area["xmin"]
-        radians_y = area["ymax"] - area["ymin"]
-        
-        # for track mode
-        if radians_x == 0 or radians_y == 0:
-            low_lim_x = area["xmin"] - (area["width"] * volatility)/2
-            high_lim_x = area["xmax"] + (area["width"] * volatility)/2
-            low_lim_y = area["ymin"] - (area["height"] * volatility)/2
-            high_lim_y = area["ymax"] + (area["height"] * volatility)/2
-        # for lost, none-track mode
-        else:
-            low_lim_x = area["xmin"] - (radians_x * volatility)/2
-            high_lim_x = area["xmax"] + (radians_x * volatility)/2
-            low_lim_y = area["ymin"] - (radians_y * volatility)/2
-            high_lim_y = area["ymax"] + (radians_y * volatility)/2
-        
-        result_x = (face["xmin"] > low_lim_x) and (face["xmin"] < high_lim_x)
-        result_y = (face["ymin"] > low_lim_y) and (face["ymin"] < high_lim_y)
-                
-        return result_x and result_y
     
-    def judge_size(self, face: dict, area: dict, volatility: float):
-        result_width = \
-            (face["width"] > area["width_min"]*(1. - volatility)) \
-                and (face["width"] < area["width_max"]*(1. + volatility))
-        result_height = \
-            (face["height"] > area["height_min"]*(1. - volatility)) \
-                and (face["height"] < area["height_max"]*(1. + volatility))
-                
-        return result_width and result_height
+    def face2area(self, face: dict, frame_no) -> dict:
+        area_dict = {"birthtime": frame_no, "xmin": face["xmin"], "ymin": face["ymin"], "xmax": face["xmin"], "ymax": face["ymin"], \
+            "width": face["width"], "height": face["height"], \
+                "width_min": face["width"], "height_min": face["height"], "width_max": face["width"], "height_max": face["height"], \
+                    "success": 1, "update": True, "garbage_collect": False, "gc_update": 1, "lost_count": 0, \
+                        "width_total": face["width"], "height_total": face["height"], \
+                            "average_wh": {"width": face["width"], "height": face["height"]}, "prev": face, "final_detect": face,}
+        return area_dict
+    
+    def garbage_collection(self, face_area):
+        new_face_area = []
+        for area in face_area:
+            if area["garbage_collect"]:
+                if area["success"]/self.progress < self.gc_success:
+                    if area["gc_update"]/self.gc_term < self.gc:
+                        continue
+            area["garbage_collect"] = True
+            area["gc_update"] = 0
+            new_face_area.append(area.copy())
+        return new_face_area
     
     def insertion_sort(self, l: list, cell: Tuple[int, float]):
         flg = True

@@ -11,13 +11,14 @@ def process(logger, paths):
     for input, output, area_path in paths:
         # prepare
         video = Video(input, 'mp4v')
-        i_s = math.ceil(len(video)/10000)
+        #i_s = math.ceil(len(video)/10000)
+        i_s = 1
         visualize = True
-        trimer = TrimFace(min_detection_confidence=0.7, model_selection=1, logger=logger, 
+        trimer = TrimFace(logger=logger, min_detection_confidence=0.7, model_selection=1,
             frame_step=1, box_ratio=1.1, 
             track_volatility=0.3, lost_volatility=0.1, size_volatility=0.03, sub_track_volatility=1.0, sub_size_volatility=0.5, threshold=0.3, 
             overlap=0.9, integrate_step=i_s, integrate_volatility=0.4, use_tracking=True, prohibit_integrate=0.7, 
-            size_limit_rate=4, gc=0.03, gc_term=100, gc_success=0.1, lost_track=1, visualize=visualize
+            size_limit_rate=4, gc=0.03, gc_term=100, gc_success=0.1, lost_track=2, visualize=visualize
         )
         
         if visualize:

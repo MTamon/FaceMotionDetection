@@ -24,9 +24,15 @@ class Detector():
     def detection(self, frame: ndarray) -> list:
         imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
+        # To improve performance
+        imgRGB.flags.writeable = False
+        
         result_ditection = self.detector.process((imgRGB))
         if not result_ditection.detections:
             return [], result_ditection
+        
+        # To improve performance
+        imgRGB.flags.writeable = True
         
         bboxes = []
         for detection in result_ditection.detections:

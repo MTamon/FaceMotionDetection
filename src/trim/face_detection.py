@@ -3,10 +3,11 @@ from numpy import ndarray
 import mediapipe as mp
 import cv2
 
-
 mp_module = mp.solutions.face_detection
 
+
 class Detector():
+    
     def __init__(self, min_detection_confidence, model_selection, box_ratio=1.5) -> None:
         
         self.min_detection_confidence = min_detection_confidence
@@ -14,10 +15,10 @@ class Detector():
         self.box_ratio = box_ratio
         
         self.detector = mp_module.FaceDetection(
-                min_detection_confidence=self.min_detection_confidence,
-                model_selection=self.model_selection
+            min_detection_confidence=self.min_detection_confidence,
+            model_selection=self.model_selection
         )
-        
+    
     def __call__(self, frame: ndarray) -> list:
         return self.detection(frame)
     
@@ -41,11 +42,11 @@ class Detector():
             box_width = detection.location_data.relative_bounding_box.width
             box_height = detection.location_data.relative_bounding_box.height
             
-            xmin = box_xmin - box_width*((self.box_ratio - 1.)/2)
-            width = box_width*self.box_ratio
+            xmin = box_xmin - box_width * ((self.box_ratio - 1.) / 2)
+            width = box_width * self.box_ratio
             xmax = xmin + width
-            ymin = box_ymin - box_height*((self.box_ratio - 1.)/2)
-            height = box_height*self.box_ratio
+            ymin = box_ymin - box_height * ((self.box_ratio - 1.) / 2)
+            height = box_height * self.box_ratio
             ymax = ymin + height
             
             xmin = xmin if xmin > 0 else 0.
@@ -55,6 +56,13 @@ class Detector():
             width = width if width < 1 else 1.
             height = height if height < 1 else 1.
             
-            bboxes.append({"xmin": xmin, "xmax": xmax, "width": width, "ymin": ymin, "ymax": ymax, "height": height})
-            
+            bboxes.append({
+                "xmin": xmin,
+                "xmax": xmax,
+                "width": width,
+                "ymin": ymin,
+                "ymax": ymax,
+                "height": height
+            })
+        
         return bboxes, result_ditection

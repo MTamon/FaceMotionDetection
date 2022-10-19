@@ -3,8 +3,9 @@ import os
 import cv2
 
 
-class Video():
-    def __init__(self, video_path: str, codec: str='mp4v') -> None:
+class Video:
+    
+    def __init__(self, video_path: str, codec: str = "mp4v") -> None:
         self.cap = cv2.VideoCapture(video_path)
         self.fourcc = cv2.VideoWriter_fourcc(*codec)
         
@@ -26,9 +27,9 @@ class Video():
         
         self.length = None
         self.__len__()
-        
+    
     def __str__(self) -> str:
-        return f'all frame : {self.cap_frames}, fps : {self.fps}, time : {self.cap_frames/self.fps}'
+        return f"all frame : {self.cap_frames}, fps : {round(self.fps, 2)}, time : {round(self.cap_frames/self.fps, 2)}"
     
     def __getitem__(self, idx):
         pos = cv2.CAP_PROP_POS_FRAMES
@@ -40,7 +41,7 @@ class Video():
     
     def __len__(self) -> int:
         if self.length is None:
-            self.length = math.ceil(self.cap_frames/self.step)
+            self.length = math.ceil(self.cap_frames / self.step)
         return self.length
     
     def __iter__(self):
@@ -52,7 +53,7 @@ class Video():
         
         frame = self.cap.read()[1]
         self.current_idx += 1
-        for i in range(self.step-1):
+        for i in range(self.step - 1):
             self.cap.read()
         return frame
     
@@ -67,11 +68,12 @@ class Video():
         return self.cap.read()
     
     def set_out_path(self, path: str):
-        self.writer = cv2.VideoWriter(path, self.fourcc, self.fps, (self.cap_width, self.cap_height))
-        
+        self.writer = cv2.VideoWriter(
+            path, self.fourcc, self.fps, (self.cap_width, self.cap_height)
+        )
+    
     def write(self, frame):
         self.writer.write(frame)
     
     def set_step(self, step):
         self.step = step
-        

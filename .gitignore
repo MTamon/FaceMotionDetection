@@ -133,9 +133,13 @@ data/
 
 # unit test
 test/trim/out
+test/face_mesh/out
 
 # log data
 log/
 
 # Vscode launch file
 .vscode
+
+# yapf style
+.style.yapf

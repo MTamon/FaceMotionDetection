@@ -4,6 +4,7 @@ from typing import List
 from numpy import ndarray
 
 AREA_KEYS = [
+    "birthtime",
     "xmin",
     "ymin",
     "xmax",

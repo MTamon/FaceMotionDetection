@@ -128,7 +128,7 @@ class Visualizer:
             img=frame,
             text=f"depth: {origin[2]}",
             org=(20, 50),
-            fontface=cv2.FONT_HERSHEY_SIMPLEX,
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=1.5,
             color=(0, 255, 0),
             thickness=2,

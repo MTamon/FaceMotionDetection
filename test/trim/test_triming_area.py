@@ -1,5 +1,6 @@
 """Thit is test program"""
 
+import _path
 import os
 from logging import Logger
 from typing import List
@@ -7,8 +8,6 @@ from typing import List
 from logger_gen import set_logger
 from src.io import load_face_area, write_face_area
 from src.trim.triming_area import TrimFace
-
-import _path
 
 
 def process(logger: Logger, paths: List[str]):
@@ -67,15 +66,20 @@ if __name__ == "__main__":
             "test/trim/out/webcame.area",
         ),
         (
-            "./data/test/short1.mp4",
-            "test/trim/out/short1.mp4",
-            "test/trim/out/short1.area",
+            "./data/test/webcame2.mp4",
+            "test/trim/out/webcame2.mp4",
+            "test/trim/out/webcame2.area",
         ),
-        (
-            "./data/test/short2.mp4",
-            "test/trim/out/short2.mp4",
-            "test/trim/out/short2.area",
-        ),
+        # (
+        #     "./data/test/short1.mp4",
+        #     "test/trim/out/short1.mp4",
+        #     "test/trim/out/short1.area",
+        # ),
+        # (
+        #     "./data/test/short2.mp4",
+        #     "test/trim/out/short2.mp4",
+        #     "test/trim/out/short2.area",
+        # ),
         # (
         #     "./data/test/midol1s.mp4",
         #     "test/trim/out/midol1s.mp4",

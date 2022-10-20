@@ -21,8 +21,7 @@ class HeadPoseEstimation:
         min_tracking_confidence=0.5,
         max_num_face=1,
         visualize=False,
-        result_path=None,
-        result_length=10000,
+        result_length=100000,
     ) -> None:
 
         self.logger = logger
@@ -30,11 +29,7 @@ class HeadPoseEstimation:
         self.min_tracking_confidence = min_tracking_confidence
         self.max_num_face = max_num_face
         self.visualize = visualize
-        self.result_path = result_path
         self.result_length = result_length
-
-        self.result_base = os.path.basename(self.result_path)
-        self.result_dir = os.path.dirname(self.result_path)
 
         self.detector_args = {
             "static_image_mode": False,
@@ -44,8 +39,38 @@ class HeadPoseEstimation:
             "min_tracking_confidence": self.min_tracking_confidence,
         }
 
-    def __call__(
-        self, input_v: str, areas: List[dict], output: str = None
+    def __call__(self, paths: list, areas: list) -> List[List[str]]:
+        """
+        Args:
+            paths (list): path list that [(video_path, hp_file_path, visualize_path), ...]\n
+            areas (list): trim-area list that [[one_video: {area1}, {area2}, ...], ...]
+
+        Returns:
+            List[List[str]]: face-motion list that [[one_video: area1_motion_path, area2_motion_path, ...], ...]
+        """
+
+        results = []
+
+        for i, (phase_paths, phase_areas) in enumerate(zip(paths, areas)):
+            video_path = phase_paths[0]
+            hp_file_path = phase_paths[1]
+            visualize_path = None
+
+            if self.visualize:
+                if len(phase_paths) < 3:
+                    ValueError("visualize-mode needs visualize-path")
+                visualize_path = phase_paths[2]
+
+            hp_phase_paths = self.phase(
+                video_path, phase_areas, hp_file_path, visualize_path
+            )
+
+            results.append(hp_phase_paths)
+
+        return results
+
+    def phase(
+        self, input_v: str, areas: List[dict], hp_path: str, output: str = None
     ) -> List[str]:
 
         procs_set = []
@@ -56,7 +81,7 @@ class HeadPoseEstimation:
         # generate process
         for i, area in enumerate(areas):
             queue_output = Queue()
-            arg_set.append((queue_output, input_v, area, i, output, i == 0))
+            arg_set.append((queue_output, input_v, area, i, hp_path, output, i == 0))
             procs_set.append(Process(target=self.apply_face_mesh, args=(arg_set[i])))
             self.logger.info(f"process:{i+1} go.")
             procs_set[i].start()
@@ -69,7 +94,7 @@ class HeadPoseEstimation:
             procs_set[i].join()
             self.logger.info(f"process:{i+1} done.")
 
-        self.logger.info("complete estimation process!")
+        self.logger.info("complete estimation process!\n")
 
         return hp_paths
 
@@ -79,6 +104,7 @@ class HeadPoseEstimation:
         input_v: str,
         area: dict,
         area_id: int,
+        hp_file_path: str,
         output: str = None,
         progress: bool = False,
     ) -> List[str]:
@@ -102,8 +128,9 @@ class HeadPoseEstimation:
                     "visualize-mode needs argument 'output', but now it's None."
                 )
             video.set_out_path(output)
+            name = video.name.split(".")[0] + " " * 15
 
-            for idx, frame in enumerate(tqdm(video, desc=video.name)):
+            for idx, frame in enumerate(tqdm(video, desc=name[:15])):
 
                 result = self.process(idx, area, frame, recognizer)
                 result = np.array(result)
@@ -123,16 +150,19 @@ class HeadPoseEstimation:
 
                 results = np.concatenate((results, result), axis=-1)
 
-        hp_path = self.write_result(results, (last_step, idx), area_id)
+        hp_path = self.write_result(hp_file_path, results, (last_step, idx), area_id)
 
         q_out.put(hp_path)
 
     def write_result(
-        self, results: np.ndarray, term: Iterable[int], area_id: int
+        self, hp_path: str, results: np.ndarray, term: Iterable[int], area_id: int
     ) -> str:
-        name, ftype = self.result_base.split(".")
+        hp_base_name = os.path.basename(hp_path)
+        hp_dir_name = os.path.dirname(hp_path)
+
+        name, ftype = hp_base_name.split(".")
         name = name + f"_{area_id}_{term[0]}_{term[1]}.{ftype}"
-        path = self.result_dir + "/" + name
+        path = hp_dir_name + "/" + name
 
         write_head_pose(path, results)
 
@@ -162,13 +192,14 @@ class HeadPoseEstimation:
         """create dictionary for record inference result.
 
         Args:
+            step (int): frame step
             area_info (dict): This dict has 'xmin', 'ymin', 'width', 'height', 'birthtime'.
             origin (Iterable): This iter has two elements (x, y) that face nose position.
             angle (Iterable): This iter has three elements (x, y, z) that face rotation.
             landmarks (Iterable): This iter has face-mesh landmarks [(x, y, z), ...].
 
         Returns:
-            dict: {'area': area_info, 'origin': origin, 'angles': angle, 'landmarks': landmarks}
+            dict: {'area': area_info, 'origin': origin, 'angles': angle, 'landmarks': landmarks, 'activation': }
         """
         area = {}
         area["xmin"] = area_info["xmin"]
@@ -247,10 +278,12 @@ class HeadPoseEstimation:
                         or idx == 1
                         or idx == 61
                         or idx == 291
-                        or idx == 199
+                        or idx == 152
+                        or idx == 10
                     ):
                         if idx == 1:
                             nose_3d = (lm.x, lm.y, lm.z)
+                            continue
 
                         x, y = int(lm.x * img_w), int(lm.y * img_h)
 
@@ -262,9 +295,11 @@ class HeadPoseEstimation:
 
                 # Convert it to the NumPy array
                 face_2d = np.array(face_2d, dtype=np.float64)
+                face_2d = face_2d - face_2d.mean(axis=0)
 
                 # Convert it to the NumPy array
                 face_3d = np.array(face_3d, dtype=np.float64)
+                face_3d = face_3d - face_3d.mean(axis=0)
 
                 # The camera matrix
                 focal_length = 1 * img_w

@@ -118,6 +118,7 @@ class TrimFace:
                     f"batch {idx} / process:{i+1} done. -> all area num = {len(results[cur_idx])}"
                 )
                 cur_idx += 1
+            self.logger.info("")
 
         return results
 
@@ -136,14 +137,15 @@ class TrimFace:
             self.min_detection_confidence, self.model_selection, self.box_ratio
         )
 
-        time.sleep(2.0)
+        time.sleep(1.0)
 
         face_area = []
 
         video.set_step(self.frame_step)
         iteration = video
         if prog:
-            iteration = tqdm(video, desc=video.name.split(".")[0], position=idx)
+            name = video.name.split(".")[0] + " " * 15
+            iteration = tqdm(video, desc=name[:15], position=idx)
 
         self.logger.info("triming face from video ...")
         for i, frame in enumerate(iteration):
@@ -213,11 +215,6 @@ class TrimFace:
                 compatible_area.append(area)
             else:
                 area["comp"] = False
-
-        # self.logger.info("complete triming process!")
-        # self.logger.info(f"all area : {len(face_area)}")
-
-        # q_out.put(compatible_area)
 
         return compatible_area
 

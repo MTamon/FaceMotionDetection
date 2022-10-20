@@ -1,5 +1,8 @@
 """Thit is test program"""
 
+from logging import Logger
+import os
+from typing import List
 import _path
 
 from src.trim.triming_area import TrimFace
@@ -9,47 +12,52 @@ from src.io import write_face_area, load_face_area
 from logger_gen import set_logger
 
 
-def process(logger, paths):
-    for input_path, output, area_path in paths:
-        # prepare
-        video = Video(input_path, "mp4v")
-        # i_s = math.ceil(len(video)/10000)
-        i_s = 1
-        visualize = True
-        trimer = TrimFace(
-            logger=logger,
-            min_detection_confidence=0.7,
-            model_selection=1,
-            frame_step=1,
-            box_ratio=1.1,
-            track_volatility=0.3,
-            lost_volatility=0.1,
-            size_volatility=0.03,
-            sub_track_volatility=1.0,
-            sub_size_volatility=0.5,
-            threshold=0.3,
-            overlap=0.9,
-            integrate_step=i_s,
-            integrate_volatility=0.4,
-            use_tracking=True,
-            prohibit_integrate=0.7,
-            size_limit_rate=4,
-            gc=0.03,
-            gc_term=100,
-            gc_success=0.1,
-            lost_track=2,
-            visualize=visualize,
-        )
+def process(logger: Logger, paths: List[str]):
+    # for input_path, output, area_path in paths:
 
-        if visualize:
-            video.set_out_path(output)
+    # prepare
+    i_s = 1
+    visualize = True
+    trimer = TrimFace(
+        logger=logger,
+        min_detection_confidence=0.7,
+        model_selection=1,
+        frame_step=1,
+        box_ratio=1.1,
+        track_volatility=0.3,
+        lost_volatility=0.1,
+        size_volatility=0.03,
+        sub_track_volatility=1.0,
+        sub_size_volatility=0.5,
+        threshold=0.3,
+        overlap=0.9,
+        integrate_step=i_s,
+        integrate_volatility=0.4,
+        use_tracking=True,
+        prohibit_integrate=0.7,
+        size_limit_rate=4,
+        gc=0.03,
+        gc_term=100,
+        gc_success=0.1,
+        lost_track=2,
+        visualize=visualize,
+    )
 
-        # run test code
-        compatible_face, face_area = trimer(video)
+    # run test code
+    # compatible_face, face_area = trimer(input_path, output)
+    results = trimer(paths)
 
-        write_face_area(area_path, face_area)
-        face_area = load_face_area(area_path)
-        logger.info("area num : " + str(len(compatible_face)))
+    for idx, result, fpath in enumerate(zip(results, paths)):
+        compatible_face = write_face_area(paths[idx][2], result)
+        _compatible_face = load_face_area(paths[idx][2])
+
+        name = os.path.basename(fpath[0])
+
+        success = 0
+        for i, face, _face in enumerate(zip(compatible_face, _compatible_face)):
+            if face == _face:
+                success += 1
+        logger.info(f"{name} / success save & load result : {success}/{len(result)}")
 
 
 if __name__ == "__main__":

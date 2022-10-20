@@ -17,12 +17,26 @@ class HeadPoseEstimation:
     def __init__(
         self,
         logger: Logger,
-        min_detection_confidence=0.5,
+        min_detection_confidence=0.7,
         min_tracking_confidence=0.5,
         max_num_face=1,
         visualize=False,
         result_length=100000,
     ) -> None:
+        """
+        Args:
+            logger (Logger): Logger instance.
+            min_detection_confidence: Minimum confidence value ([0.0, 1.0]) for face
+                detection to be considered successful. See details in
+                https://solutions.mediapipe.dev/face_mesh#min_detection_confidence.
+            min_tracking_confidence: Minimum confidence value ([0.0, 1.0]) for the
+                face landmarks to be considered tracked successfully. See details in
+                https://solutions.mediapipe.dev/face_mesh#min_tracking_confidence.
+            max_num_faces: Maximum number of faces to detect. See details in
+                https://solutions.mediapipe.dev/face_mesh#max_num_faces.
+            visualize (bool, optional): visualize result as video. Defaults to False.
+            result_length (int, optional): result's max step number. memory saving effect. Defaults to 100000.
+        """
 
         self.logger = logger
         self.min_detection_confidence = min_detection_confidence

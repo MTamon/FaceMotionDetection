@@ -39,6 +39,58 @@ class TrimFace:
         process_num=3,
         visualize=False,
     ) -> None:
+        """
+        Args:
+            logger (Logger):
+                Logger instance.
+            min_detection_confidence:
+                Minimum confidence value ([0.0, 1.0]) for face detection to be considered successful. See details in
+                https://solutions.mediapipe.dev/face_detection#min_detection_confidence.
+            model_selection:
+                0 or 1. 0 to select a short-range model that works best for faces within 2 meters from the camera, and 1 for a full-range model best for faces within 5 meters. See details in
+                https://solutions.mediapipe.dev/face_detection#model_selection.
+            frame_step (int, optional):
+                Frame loading frequency. Defaults to 1.
+            box_ratio (float, optional):
+                Face-detection bounding-box's rate. Defaults to 1.1.
+            track_volatility (float, optional):
+                Volatility of displacement during face tracking. Defaults to 0.3.
+            lost_volatility (float, optional):
+                Volatility of displacement when lost face tracking. Defaults to 0.1.
+            size_volatility (float, optional):
+                Volatility in face size when face detection. Defaults to 0.03.
+            sub_track_volatility (float, optional):
+                Volatility of the tracking decision when referring to the last detection position in non-tracking mode, regardless of the period of time lost. Defaults to 1.0.
+            sub_size_volatility (float, optional):
+                Volatility of the tracking decision when referring to the last detection size in non-tracking mode, regardless of the period of time lost. Defaults to 0.5.
+            threshold (float, optional):
+                Exclude clippings with low detection rates. Defaults to 0.3.
+            overlap (float, optional):
+                Integration conditions in duplicate clippings. Defaults to 0.9.
+            integrate_step (int, optional):
+                Integration running frequency. Defaults to 1.
+            integrate_volatility (float, optional):
+                Allowable volatility of size features between two clippings when integrating clippings. Defaults to 0.4.
+            use_tracking (bool, optional):
+                Whether or not to use the face tracking feature. Defaults to True.
+            prohibit_integrate (float, optional):
+                Threshold to prohibit integration of clippings. Defaults to 0.7.
+            size_limit_rate (int, optional):
+                Maximum size of the clipping relative to the size of the detected face. Defaults to 4.
+            gc (float, optional):
+                Success rate thresholds in garbage collect during gc_term. Defaults to 0.03.
+            gc_term (int, optional):
+                Garbage collection execution cycle. Defaults to 100.
+            gc_success (float, optional):
+                Success rate thresholds in garbage collect. Defaults to 0.1.
+            lost_track (int, optional):
+                Number of turns of steps to search the vicinity when face detection is lost. Defaults to 2.
+            process_num (int, optional):
+                Maximum number of processes in parallel processing. Defaults to 3.
+            visualize (bool, optional):
+                Visualization options for the analysis process.
+                When use this option, processing speed is made be lower. Defaults to False.
+        """
 
         self.min_detection_confidence = min_detection_confidence
         self.model_selection = model_selection
@@ -546,7 +598,7 @@ class TrimFace:
                 volatility2 = self.track_volatility
 
             # compare with final detect
-            if not final_detect is None and mode == "lost":
+            if final_detect is not None and mode == "lost":
                 if not judge_coordinates(face, final_detect, self.sub_track_volatility):
                     pass
                 elif not judge_size(face, final_detect, self.sub_size_volatility):

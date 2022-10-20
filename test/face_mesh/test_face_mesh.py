@@ -1,19 +1,17 @@
+"""Thit is test program"""
+
 from logging import Logger
-import _path
 
-import math
-
-from src.face_mesh.face_mesh import HeadPoseEstimation
-from src.utils import Video
-from src.visualizer import Visualizer
-from src.io import load_face_area
 from logger_gen import set_logger
+from src.face_mesh.face_mesh import HeadPoseEstimation
+from src.io import load_face_area
+
+import _path
 
 
 def process(logger: Logger, paths):
     for input_v, input_a, output, hp_path in paths:
         # prepare
-        # video = Video(input_v, 'mp4v')
         areas = load_face_area(input_a)
         visualize = True
         hpe = HeadPoseEstimation(
@@ -26,12 +24,8 @@ def process(logger: Logger, paths):
             result_length=10000,
         )
 
-        # if visualize:
-        #     video.set_out_path(output)
-
         # run test code
         hp_paths = hpe(input_v, areas, output)
-        # hp_paths = hpe(video, areas)
 
         for hpp in hp_paths:
             logger.info(f"saved file {hpp}")

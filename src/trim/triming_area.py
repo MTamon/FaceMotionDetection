@@ -2,9 +2,8 @@ from logging import Logger
 import math
 import time
 from typing import Tuple, List
-from matplotlib.pyplot import bar
 from tqdm import tqdm
-from multiprocessing import Pool, Process, Queue, RLock
+from multiprocessing import Pool, RLock
 
 from .face_detection import Detector
 from src.utils import Video
@@ -123,12 +122,7 @@ class TrimFace:
         return results
 
     def triming_face(
-        # self, q_out: Queue, v_path: str, out: str = None, prog: bool = False
-        self,
-        v_path: str,
-        out: str = None,
-        prog: bool = False,
-        idx: int = 0,
+        self, v_path: str, out: str = None, prog: bool = False, idx: int = 0
     ) -> List[dict]:
         video = Video(v_path, "mp4v")
         if self.visualize:

@@ -1,9 +1,6 @@
-from numpy import ndarray
-
-import mediapipe as mp
 import cv2
-
-mp_module = mp.solutions.face_detection
+from mediapipe.python.solutions.face_detection import FaceDetection
+from numpy import ndarray
 
 
 class Detector:
@@ -15,7 +12,7 @@ class Detector:
         self.model_selection = model_selection
         self.box_ratio = box_ratio
 
-        self.detector = mp_module.FaceDetection(
+        self.detector = FaceDetection(
             min_detection_confidence=self.min_detection_confidence,
             model_selection=self.model_selection,
         )

@@ -1,15 +1,15 @@
 import os
+import time
 from logging import Logger
 from multiprocessing import Process, Queue
 from typing import Iterable, List, Tuple
-import time
 
 import cv2
 import numpy as np
 from mediapipe.python.solutions.face_mesh import FaceMesh
+from src.io import write_head_pose
 from src.utils import Video
 from src.visualizer import Visualizer
-from src.io import write_head_pose
 from tqdm import tqdm
 
 

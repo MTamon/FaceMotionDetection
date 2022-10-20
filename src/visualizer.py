@@ -125,13 +125,13 @@ class Visualizer:
         frame[y_lw:y_up, x_lw:x_up] = area_frame
 
         cv2.putText(
-            frame,
-            f"depth: {origin[2]}",
-            (20, 50),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.5,
-            (0, 255, 0),
-            2,
+            img=frame,
+            text=f"depth: {origin[2]}",
+            org=(20, 50),
+            fontface=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=1.5,
+            color=(0, 255, 0),
+            thickness=2,
         )
 
         return frame

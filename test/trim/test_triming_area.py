@@ -1,20 +1,17 @@
 """Thit is test program"""
 
-from logging import Logger
 import os
+from logging import Logger
 from typing import List
-import _path
 
-from src.trim.triming_area import TrimFace
-from src.utils import Video
-from src.visualizer import Visualizer
-from src.io import write_face_area, load_face_area
 from logger_gen import set_logger
+from src.io import load_face_area, write_face_area
+from src.trim.triming_area import TrimFace
+
+import _path
 
 
 def process(logger: Logger, paths: List[str]):
-    # for input_path, output, area_path in paths:
-
     # prepare
     i_s = 1
     visualize = True
@@ -45,9 +42,9 @@ def process(logger: Logger, paths: List[str]):
     )
 
     # run test code
-    # compatible_face, face_area = trimer(input_path, output)
     results = trimer(paths)
 
+    # check pickle's save & load function
     for idx, (result, fpath) in enumerate(zip(results, paths)):
         compatible_face = write_face_area(paths[idx][2], result)
         _compatible_face = load_face_area(paths[idx][2])

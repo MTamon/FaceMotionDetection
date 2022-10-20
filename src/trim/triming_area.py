@@ -2,8 +2,9 @@ from logging import Logger
 import math
 import time
 from typing import Tuple, List
+from matplotlib.pyplot import bar
 from tqdm import tqdm
-from multiprocessing import Process, Queue, RLock
+from multiprocessing import Pool, Process, Queue, RLock
 
 from .face_detection import Detector
 from src.utils import Video
@@ -65,8 +66,6 @@ class TrimFace:
         self.progress_num = process_num
         self.visualize = visualize
 
-        self.progress = 0
-
     def __call__(self, paths: List[Tuple[str]]) -> List[List[dict]]:
         """
         Args:
@@ -91,27 +90,29 @@ class TrimFace:
 
         for idx, batch in enumerate(process_batch):
             arg_set = []
-            procs_set = []
 
-            tqdm.set_lock(RLock)
+            dw_sorted = []
+            # find largest video file in batch
+            for i, proc_path in enumerate(batch):
+                video = Video(proc_path[0], "mp4v")
+                cell = (i, video.cap_frames)
+                dw_sorted = self.insertion_sort(dw_sorted, cell)
+            dw_sorted.reverse()
 
             # generate process
-            for i, proc_path in enumerate(batch):
+            for n, (i, _) in enumerate(dw_sorted):
+                proc_path = batch[i]
                 output = None
                 if len(proc_path) >= 2:
                     output = proc_path[1]
 
-                queue_output = Queue()
-                arg_set.append((queue_output, proc_path[0], output, i))
-                procs_set.append(Process(target=self.triming_face, args=(arg_set[i])))
                 self.logger.info(f"process:{i+1} go.")
-                procs_set[i].start()
 
-            # batch terminal process
-            for i in range(len(batch)):
-                q_out = arg_set[i][0]
-                results.append(q_out.get())
-                procs_set[i].join()
+                arg_set.append([proc_path[0], output, True, n])
+
+            tqdm.set_lock(RLock())
+            p = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
+            results += p.starmap(self.triming_face, arg_set)
 
             for i in range(len(batch)):
                 self.logger.info(
@@ -119,36 +120,40 @@ class TrimFace:
                 )
                 cur_idx += 1
 
-        # return self.triming_face(input_path, output)
         return results
 
     def triming_face(
-        self, q_out: Queue, input_path: str, output: str = None, bar_posi: int = 0
+        # self, q_out: Queue, v_path: str, out: str = None, prog: bool = False
+        self,
+        v_path: str,
+        out: str = None,
+        prog: bool = False,
+        idx: int = 0,
     ) -> List[dict]:
-        video = Video(input_path, "mp4v")
+        video = Video(v_path, "mp4v")
         if self.visualize:
-            if output is None:
+            if out is None:
                 raise ValueError(
-                    "visualize-mode needs argument 'output', but now it's None."
+                    "visualize-mode needs argument 'out', but now it's None."
                 )
-            video.set_out_path(output)
+            video.set_out_path(out)
 
-        time.sleep(0.2 * bar_posi)
         detector = Detector(
             self.min_detection_confidence, self.model_selection, self.box_ratio
         )
 
+        time.sleep(2.0)
+
         face_area = []
 
         video.set_step(self.frame_step)
-
-        time.sleep(1.0)
+        iteration = video
+        if prog:
+            iteration = tqdm(video, desc=video.name.split(".")[0], position=idx)
 
         self.logger.info("triming face from video ...")
-        for i, frame in enumerate(
-            tqdm(video, desc=video.name.split(".")[0], position=bar_posi + 1)
-        ):
-            self.progress = i + 1
+        for i, frame in enumerate(iteration):
+            progress = i + 1
 
             # reset update flag
             for area in face_area:
@@ -161,7 +166,7 @@ class TrimFace:
             face_ids = []
             faces = []
             for face in result_faces:
-                compatible_face_id = self.judge_face(face_area, face)
+                compatible_face_id = self.judge_face(progress, face_area, face)
                 face_ids.append(compatible_face_id)
                 faces.append(face)
 
@@ -176,18 +181,18 @@ class TrimFace:
                     face_area.append(area_dict)
                 else:
                     # update existed area
-                    face_area[id] = self.update_area_dict(face_area[id], face)
+                    face_area[id] = self.update_area_dict(progress, face_area[id], face)
 
             # area integration
             if i % self.integrate_step == 0:
-                _face_area = self.integrate_area(face_area)
+                _face_area = self.integrate_area(progress, face_area)
                 while len(_face_area) != len(face_area):
                     face_area = _face_area
-                    _face_area = self.integrate_area(face_area)
+                    _face_area = self.integrate_area(progress, face_area)
 
             # garbage collection
-            if self.progress % self.gc_term == 0:
-                face_area = self.garbage_collection(face_area)
+            if progress % self.gc_term == 0:
+                face_area = self.garbage_collection(progress, face_area)
 
             # Areas that were not updated have their past information erased.
             for area in face_area:
@@ -201,10 +206,10 @@ class TrimFace:
                 Visualizer.face_area_window(face_area, video, frame, origin, updates)
 
         # final area integration
-        _face_area = self.integrate_area(face_area)
+        _face_area = self.integrate_area(progress, face_area)
         while len(_face_area) != len(face_area):
             face_area = _face_area
-            _face_area = self.integrate_area(face_area)
+            _face_area = self.integrate_area(progress, face_area)
 
         # remove under success rate
         compatible_area = []
@@ -218,9 +223,9 @@ class TrimFace:
         # self.logger.info("complete triming process!")
         # self.logger.info(f"all area : {len(face_area)}")
 
-        q_out.put(compatible_area)
+        # q_out.put(compatible_area)
 
-        return
+        return compatible_area
 
     def combine_area(self, area1: dict, area2: dict) -> dict:
         comb_area = area1.copy()
@@ -273,7 +278,7 @@ class TrimFace:
 
         return comb_area
 
-    def integrate_area(self, face_area: List[dict]) -> List[dict]:
+    def integrate_area(self, progress: int, face_area: List[dict]) -> List[dict]:
         def overlaped(area1: dict, area2: dict) -> dict:
 
             new_area = self.combine_area(area1, area2)
@@ -343,8 +348,8 @@ class TrimFace:
                 if n in skip_id:  # integrated
                     continue
                 if (
-                    area["success"] / self.progress > self.prohibit_integrate
-                    and _area["success"] / self.progress > self.prohibit_integrate
+                    area["success"] / progress > self.prohibit_integrate
+                    and _area["success"] / progress > self.prohibit_integrate
                 ):
                     continue
                 if (area["prev"] is not None) and (_area["prev"] is not None):
@@ -453,9 +458,9 @@ class TrimFace:
 
         return _table
 
-    def update_area_dict(self, area: dict, face) -> dict:
+    def update_area_dict(self, progress: int, area: dict, face) -> dict:
 
-        new_area = self.combine_area(area, self.face2area(face, self.progress - 1))
+        new_area = self.combine_area(area, self.face2area(face, progress - 1))
 
         width_limit = face["width"] * self.size_limit_rate
         height_limit = face["height"] * self.size_limit_rate
@@ -468,7 +473,7 @@ class TrimFace:
 
         return new_area
 
-    def judge_face(self, face_area: List[dict], face) -> List[tuple]:
+    def judge_face(self, progress: int, face_area: List[dict], face) -> List[tuple]:
         """Compare bounding boxes with existing bounding boxes
 
         Args:
@@ -539,9 +544,7 @@ class TrimFace:
             if area["prev"] is None or not self.use_tracking:
                 mode = "lost"
 
-                final_detect = self.face2area(
-                    area["final_detect"].copy(), self.progress - 1
-                )
+                final_detect = self.face2area(area["final_detect"].copy(), progress - 1)
                 volatility1 = self.lost_volatility
                 volatility2 = self.size_volatility
 
@@ -635,11 +638,11 @@ class TrimFace:
         }
         return area_dict
 
-    def garbage_collection(self, face_area):
+    def garbage_collection(self, progress: int, face_area: List[dict]):
         new_face_area = []
         for area in face_area:
             if area["garbage_collect"]:
-                if area["success"] / self.progress < self.gc_success:
+                if area["success"] / progress < self.gc_success:
                     if area["gc_update"] / self.gc_term < self.gc:
                         continue
             area["garbage_collect"] = True
@@ -655,6 +658,7 @@ class TrimFace:
             else:
                 l.insert(idx, cell)
                 flg = False
+                break
 
         if flg:
             l.append(cell)

@@ -185,11 +185,13 @@ class TrimFace:
                 )
             video.set_out_path(out)
 
+        # time.sleep(0.2 * idx)
+
         detector = Detector(
             self.min_detection_confidence, self.model_selection, self.box_ratio
         )
 
-        time.sleep(1.0)
+        time.sleep(0.5)
 
         face_area = []
 

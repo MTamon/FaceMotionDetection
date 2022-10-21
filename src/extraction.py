@@ -4,6 +4,7 @@ from argparse import Namespace
 from logging import Logger
 from .trim.triming_area import TrimFace
 from .face_mesh.face_mesh import HeadPoseEstimation
+from .io import write_face_area
 
 
 class Extraction:
@@ -18,6 +19,14 @@ class Extraction:
         self.visualize = args.visualize
 
     def __call__(self, paths: list) -> list:
+        """Run face-area triming & head-pose-estimation
+
+        Args:
+            paths (list): [(video_path, hpe_result_path, triming_result_path, visualize_path), ...]
+
+        Returns:
+            list: [[HPE_area1.hp, HPE_area2.hp, ...], ...]
+        """
 
         self.logger.info("#" * 80)
         self.logger.info("#  START TRIMING PHASE")
@@ -26,6 +35,12 @@ class Extraction:
         # triming area
         input_trim = self.get_input_trim(paths)
         trimer_result = self.trimer(input_trim)
+
+        # save triming result
+        _trimer_result = []
+        for idx, (result, fpath) in enumerate(zip(trimer_result, paths)):
+            _trimer_result.append(write_face_area(fpath[2], result))
+        trimer_result = _trimer_result
 
         self.logger.info("#" * 80)
         self.logger.info("#  START HEAD-POSE-ESTIMATION PHASE")
@@ -49,9 +64,9 @@ class Extraction:
 
             output = None
             if self.visualize:
-                if len(paths) < 3:
+                if len(paths) < 4:
                     ValueError("visualize-mode needs visualize-path")
-                output = path_set[2]
+                output = path_set[3]
 
             input_set = (path_set[0], output)
             input_trim.append(input_set)
@@ -65,9 +80,9 @@ class Extraction:
 
             output = None
             if self.visualize:
-                if len(paths) < 3:
+                if len(paths) < 4:
                     ValueError("visualize-mode needs visualize-path")
-                output = path_set[2]
+                output = path_set[3]
 
             input_set = (path_set[0], path_set[1], area_set, output)
             input_hpe.append(input_set)

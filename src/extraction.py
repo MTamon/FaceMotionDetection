@@ -5,6 +5,7 @@ from logging import Logger
 from .trim.triming_area import TrimFace
 from .face_mesh.face_mesh import HeadPoseEstimation
 from .io import write_face_area
+from .utils import Loging_MSG
 
 
 class Extraction:
@@ -22,15 +23,13 @@ class Extraction:
         """Run face-area triming & head-pose-estimation
 
         Args:
-            paths (list): [(video_path, hpe_result_path, triming_result_path, visualize_path), ...]
+            paths (list): [(video_path, hpe_result_path, triming_result_path, visualize_path1, visualize_path2), ...]
 
         Returns:
             list: [[HPE_area1.hp, HPE_area2.hp, ...], ...]
         """
 
-        self.logger.info("#" * 80)
-        self.logger.info("#  START TRIMING PHASE")
-        self.logger.info("#" * 80)
+        Loging_MSG.large_phase(self.logger, "START TRIMING PHASE")
 
         # triming area
         input_trim = self.get_input_trim(paths)
@@ -42,9 +41,7 @@ class Extraction:
             _trimer_result.append(write_face_area(fpath[2], result))
         trimer_result = _trimer_result
 
-        self.logger.info("#" * 80)
-        self.logger.info("#  START HEAD-POSE-ESTIMATION PHASE")
-        self.logger.info("#" * 80)
+        Loging_MSG.large_phase(self.logger, "START HEAD-POSE-ESTIMATION PHASE")
 
         # head pose estimation
         input_hpe = self.get_input_hpe(paths, trimer_result)
@@ -64,8 +61,8 @@ class Extraction:
 
             output = None
             if self.visualize:
-                if len(paths) < 4:
-                    ValueError("visualize-mode needs visualize-path")
+                if len(path_set) != 5:
+                    ValueError(f"each phase args are expected 5, but got {len(paths)}")
                 output = path_set[3]
 
             input_set = (path_set[0], output)
@@ -80,9 +77,9 @@ class Extraction:
 
             output = None
             if self.visualize:
-                if len(paths) < 4:
-                    ValueError("visualize-mode needs visualize-path")
-                output = path_set[3]
+                if len(path_set) != 5:
+                    ValueError(f"each phase args are expected 5, but got {len(paths)}")
+                output = path_set[4]
 
             input_set = (path_set[0], path_set[1], area_set, output)
             input_hpe.append(input_set)
@@ -125,7 +122,6 @@ class Extraction:
         hpe_args["min_tracking_confidence"] = args.min_tracking_confidence
         hpe_args["max_num_face"] = args.max_num_face
         hpe_args["visualize"] = args.visualize
-        hpe_args["override_input"] = False
         hpe_args["result_length"] = args.result_length
 
         return hpe_args

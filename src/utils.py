@@ -1,3 +1,4 @@
+from logging import Logger
 import math
 import os
 import cv2
@@ -76,3 +77,20 @@ class Video:
 
     def set_step(self, step):
         self.step = step
+
+
+class Loging_MSG:
+    @staticmethod
+    def large_phase(logger: Logger, msg: str):
+        len_str = len(msg)
+        len_wall = 80
+
+        if len_str > 70:
+            len_wall = len_str + 10
+
+        l_spaces = " " * int((70 - len_str) / 2)
+        r_spaces = " " * int((70 - len_str) / 2 + 0.5)
+
+        logger.info("#" * len_wall)
+        logger.info(f"##   {l_spaces}{msg}{r_spaces}   ##")
+        logger.info("#" * len_wall)

@@ -5,6 +5,7 @@ from multiprocessing import Process, Queue
 from typing import Iterable, List, Tuple
 
 import cv2
+from cv2 import phase
 import numpy as np
 from mediapipe.python.solutions.face_mesh import FaceMesh
 from src.io import write_head_pose
@@ -21,7 +22,6 @@ class HeadPoseEstimation:
         min_tracking_confidence=0.5,
         max_num_face=1,
         visualize=False,
-        override_input=True,
         result_length=100000,
     ) -> None:
         """
@@ -36,7 +36,6 @@ class HeadPoseEstimation:
             max_num_faces: Maximum number of faces to detect. See details in
                 https://solutions.mediapipe.dev/face_mesh#max_num_faces.
             visualize (bool, optional): visualize result as video. Defaults to False.
-            override_input (bool, optional): override input video. When False, override output video.
             result_length (int, optional): result's max step number. memory saving effect. Defaults to 100000.
         """
 
@@ -45,7 +44,6 @@ class HeadPoseEstimation:
         self.min_tracking_confidence = min_tracking_confidence
         self.max_num_face = max_num_face
         self.visualize = visualize
-        self.override_input = override_input
         self.result_length = result_length
 
         self.detector_args = {
@@ -56,13 +54,11 @@ class HeadPoseEstimation:
             "min_tracking_confidence": self.min_tracking_confidence,
         }
 
-    def __call__(self, paths: list, areas: list) -> List[List[str]]:
+    def __call__(self, all_phase_args: list) -> List[List[str]]:
         """
         Args:
-            paths (list):
-                path list that [(video_path, hp_file_path, visualize_path), ...]
-            areas (list):
-                trim-area list that [[one_video: {area1}, {area2}, ...], ...]
+            all_phase_args: list
+                [(video_path, hpe_result_path, area_dict, visualize_path), ...]
 
         Returns:
             List[List[str]]: face-motion list that [[one_video: area1_motion_path, area2_motion_path, ...], ...]
@@ -70,18 +66,19 @@ class HeadPoseEstimation:
 
         results = []
 
-        for i, (phase_paths, phase_areas) in enumerate(zip(paths, areas)):
-            video_path = phase_paths[0]
-            hp_file_path = phase_paths[1]
+        for i, phase_args in enumerate(all_phase_args):
+            video_path = phase_args[0]
+            hp_file_path = phase_args[1]
+            phase_area = phase_args[2]
             visualize_path = None
 
             if self.visualize:
-                if len(phase_paths) < 3:
+                if len(phase_args) < 4:
                     ValueError("visualize-mode needs visualize-path")
-                visualize_path = phase_paths[2]
+                visualize_path = phase_args[3]
 
             hp_phase_paths = self.phase(
-                video_path, phase_areas, hp_file_path, visualize_path
+                video_path, hp_file_path, phase_area, visualize_path
             )
 
             results.append(hp_phase_paths)
@@ -89,7 +86,7 @@ class HeadPoseEstimation:
         return results
 
     def phase(
-        self, input_v: str, areas: List[dict], hp_path: str, output: str = None
+        self, input_v: str, hp_path: str, areas: List[dict], output: str = None
     ) -> List[str]:
 
         procs_set = []
@@ -149,9 +146,6 @@ class HeadPoseEstimation:
             video.set_out_path(output)
             name = video.name.split(".")[0] + " " * 15
 
-            if not self.override_input:
-                video_sub = Video(output, "mp4v")
-
             for idx, frame in enumerate(tqdm(video, desc=name[:15])):
 
                 result = self.process(idx, area, frame, recognizer)
@@ -160,8 +154,6 @@ class HeadPoseEstimation:
                 results = np.concatenate((results, result), axis=-1)
 
                 if self.visualize:
-                    if not self.override_input:
-                        frame = video_sub[idx]
                     if result[0]["origin"] is not None:
                         frame = Visualizer.head_pose_plotter(frame, result[0])
                     Visualizer.frame_writer(frame, video)

@@ -11,14 +11,14 @@ def add_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--min-tracking-confidence",
-        default=0,
+        default=0.5,
         type=float,
         help="face landmarks to be considered tracked successfully. See details in https://solutions.mediapipe.dev/face_mesh#min_tracking_confidence.",
     )
     parser.add_argument(
         "--max-num-face",
-        default=0,
-        type=float,
+        default=1,
+        type=int,
         help="Maximum number of faces to detect. See details in https://solutions.mediapipe.dev/face_mesh#max_num_faces.",
     )
     parser.add_argument(

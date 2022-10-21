@@ -43,13 +43,13 @@ if __name__ == "__main__":
             "test/out/short1T.mp4",
             "test/out/short1F.mp4",
         ),
-        # (
-        #     "./data/test/short2.mp4",
-        #     "test/out/short2.hp",
-        #     "test/out/short2.area",
-        #     "test/out/short2T.mp4",
-        #     "test/out/short2F.mp4",
-        # ),
+        (
+            "./data/test/short2.mp4",
+            "test/out/short2.hp",
+            "test/out/short2.area",
+            "test/out/short2T.mp4",
+            "test/out/short2F.mp4",
+        ),
         # (
         #     "./data/test/midol1s.mp4",
         #     "test/out/midol1s.hp",

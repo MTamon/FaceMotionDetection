@@ -110,7 +110,8 @@ class HeadPoseEstimation:
             procs_set[i].join()
             self.logger.info(f"process:{i+1} done.")
 
-        self.logger.info("complete estimation process!\n")
+        self.logger.info("complete estimation process!")
+        self.logger.info("")
 
         return hp_paths
 

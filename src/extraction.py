@@ -110,6 +110,7 @@ class Extraction:
         hpe_args["min_tracking_confidence"] = args.min_tracking_confidence
         hpe_args["max_num_face"] = args.max_num_face
         hpe_args["visualize"] = args.visualize
+        hpe_args["override_input"] = False
         hpe_args["result_length"] = args.result_length
 
         return hpe_args

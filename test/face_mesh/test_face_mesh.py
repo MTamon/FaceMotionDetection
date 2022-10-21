@@ -23,6 +23,7 @@ def process(logger: Logger, paths):
         min_tracking_confidence=0.5,
         max_num_face=1,
         visualize=visualize,
+        override_input=True,
         result_length=1000000,
     )
 

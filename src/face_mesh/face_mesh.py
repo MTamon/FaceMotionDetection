@@ -21,6 +21,7 @@ class HeadPoseEstimation:
         min_tracking_confidence=0.5,
         max_num_face=1,
         visualize=False,
+        override_input=True,
         result_length=100000,
     ) -> None:
         """
@@ -35,6 +36,7 @@ class HeadPoseEstimation:
             max_num_faces: Maximum number of faces to detect. See details in
                 https://solutions.mediapipe.dev/face_mesh#max_num_faces.
             visualize (bool, optional): visualize result as video. Defaults to False.
+            override_input (bool, optional): override input video. When False, override output video.
             result_length (int, optional): result's max step number. memory saving effect. Defaults to 100000.
         """
 
@@ -43,6 +45,7 @@ class HeadPoseEstimation:
         self.min_tracking_confidence = min_tracking_confidence
         self.max_num_face = max_num_face
         self.visualize = visualize
+        self.override_input = override_input
         self.result_length = result_length
 
         self.detector_args = {
@@ -56,8 +59,10 @@ class HeadPoseEstimation:
     def __call__(self, paths: list, areas: list) -> List[List[str]]:
         """
         Args:
-            paths (list): path list that [(video_path, hp_file_path, visualize_path), ...]\n
-            areas (list): trim-area list that [[one_video: {area1}, {area2}, ...], ...]
+            paths (list):
+                path list that [(video_path, hp_file_path, visualize_path), ...]
+            areas (list):
+                trim-area list that [[one_video: {area1}, {area2}, ...], ...]
 
         Returns:
             List[List[str]]: face-motion list that [[one_video: area1_motion_path, area2_motion_path, ...], ...]
@@ -144,6 +149,9 @@ class HeadPoseEstimation:
             video.set_out_path(output)
             name = video.name.split(".")[0] + " " * 15
 
+            if not self.override_input:
+                video_sub = Video(output, "mp4v")
+
             for idx, frame in enumerate(tqdm(video, desc=name[:15])):
 
                 result = self.process(idx, area, frame, recognizer)
@@ -152,7 +160,9 @@ class HeadPoseEstimation:
                 results = np.concatenate((results, result), axis=-1)
 
                 if self.visualize:
-                    if not result[0]["origin"] is None:
+                    if not self.override_input:
+                        frame = video_sub[idx]
+                    if result[0]["origin"] is not None:
                         frame = Visualizer.head_pose_plotter(frame, result[0])
                     Visualizer.frame_writer(frame, video)
 

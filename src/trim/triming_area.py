@@ -191,7 +191,7 @@ class TrimFace:
             self.min_detection_confidence, self.model_selection, self.box_ratio
         )
 
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         face_area = []
 

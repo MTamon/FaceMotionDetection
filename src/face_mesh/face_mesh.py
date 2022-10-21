@@ -139,11 +139,12 @@ class HeadPoseEstimation:
         time.sleep(1)
 
         if progress:
-            if output is None:
-                raise ValueError(
-                    "visualize-mode needs argument 'output', but now it's None."
-                )
-            video.set_out_path(output)
+            if self.visualize:
+                if output is None:
+                    raise ValueError(
+                        "visualize-mode needs argument 'output', but now it's None."
+                    )
+                video.set_out_path(output)
             name = video.name.split(".")[0] + " " * 15
 
             for idx, frame in enumerate(tqdm(video, desc=name[:15])):

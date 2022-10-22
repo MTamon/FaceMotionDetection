@@ -185,8 +185,6 @@ class TrimFace:
                 )
             video.set_out_path(out)
 
-        # time.sleep(0.2 * idx)
-
         detector = Detector(
             self.min_detection_confidence, self.model_selection, self.box_ratio
         )

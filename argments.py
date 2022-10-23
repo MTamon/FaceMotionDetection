@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 def add_args(parser: ArgumentParser):
 
     parser.add_argument(
-        "--min_detection-confidence",
+        "--min-detection-confidence",
         default=0.7,
         type=float,
         help="Minimum confidence value ([0.0, 1.0]) for face detection to be considered successful. See details in https://solutions.mediapipe.dev/face_detection#min_detection_confidence.",

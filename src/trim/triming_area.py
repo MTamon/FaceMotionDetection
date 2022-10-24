@@ -190,6 +190,8 @@ class TrimFace:
         )
 
         time.sleep(1.0)
+        if idx == 0:
+            self.logger.info("triming face from video ...")
 
         face_area = []
 
@@ -199,7 +201,6 @@ class TrimFace:
             name = video.name.split(".")[0] + " " * 15
             iteration = tqdm(video, desc=name[:15], position=idx)
 
-        self.logger.info("triming face from video ...")
         for i, frame in enumerate(iteration):
             progress = i + 1
 

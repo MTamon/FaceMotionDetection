@@ -2,7 +2,6 @@
 
 from argparse import Namespace
 import _path
-import os
 from logging import Logger
 from typing import List
 
@@ -15,12 +14,12 @@ def process(logger: Logger, args: Namespace, paths: List[str]):
     # prepare
     extractor = Extraction(logger, args)
 
-    results = extractor(paths)
+    extractor(paths)
 
 
 if __name__ == "__main__":
     log = set_logger("TEST-EXTRACT", "log/test/test-extract.log")
-    args = get_args()
+    arguments = get_args()
     paths_input = [
         (
             "./data/test/webcame.mp4",
@@ -86,4 +85,4 @@ if __name__ == "__main__":
         #     "test/out/test4F.mp4",
         # ),
     ]
-    process(log, args, paths_input)
+    process(log, arguments, paths_input)

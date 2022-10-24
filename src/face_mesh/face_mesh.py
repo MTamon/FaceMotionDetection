@@ -1,3 +1,5 @@
+"""This code is for Head-Motion-Estimation."""
+
 import os
 import time
 from logging import Logger
@@ -5,7 +7,6 @@ from multiprocessing import Process, Queue
 from typing import Iterable, List, Tuple
 
 import cv2
-from cv2 import phase
 import numpy as np
 from mediapipe.python.solutions.face_mesh import FaceMesh
 from src.io import write_head_pose
@@ -35,8 +36,10 @@ class HeadPoseEstimation:
                 https://solutions.mediapipe.dev/face_mesh#min_tracking_confidence.
             max_num_faces: Maximum number of faces to detect. See details in
                 https://solutions.mediapipe.dev/face_mesh#max_num_faces.
-            visualize (bool, optional): visualize result as video. Defaults to False.
-            result_length (int, optional): result's max step number. memory saving effect. Defaults to 100000.
+            visualize (bool, optional):
+                visualize result as video. Defaults to False.
+            result_length (int, optional):
+                result's max step number. memory saving effect. Defaults to 100000.
         """
 
         self.logger = logger
@@ -66,7 +69,7 @@ class HeadPoseEstimation:
 
         results = []
 
-        for i, phase_args in enumerate(all_phase_args):
+        for phase_args in all_phase_args:
             video_path = phase_args[0]
             hp_file_path = phase_args[1]
             phase_area = phase_args[2]
@@ -279,7 +282,7 @@ class HeadPoseEstimation:
         # Convert the color space from RGB to BGR
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        img_h, img_w, img_c = image.shape
+        img_h, img_w, _ = image.shape
 
         results = []
 
@@ -289,7 +292,7 @@ class HeadPoseEstimation:
                 face_3d = []
                 face_2d = []
 
-                for idx, lm in enumerate(face_landmarks.landmark):
+                for idx, landmark in enumerate(face_landmarks.landmark):
                     if (
                         idx == 33
                         or idx == 263
@@ -300,16 +303,16 @@ class HeadPoseEstimation:
                         or idx == 10
                     ):
                         if idx == 1:
-                            nose_3d = (lm.x, lm.y, lm.z)
+                            nose_3d = (landmark.x, landmark.y, landmark.z)
                             continue
 
-                        x, y = int(lm.x * img_w), int(lm.y * img_h)
+                        x, y = int(landmark.x * img_w), int(landmark.y * img_h)
 
                         # Get the 2D Coordinates
                         face_2d.append([x, y])
 
                         # Get the 3D Coordinates
-                        face_3d.append([x, y, lm.z])
+                        face_3d.append([x, y, landmark.z])
 
                 # Convert it to the NumPy array
                 face_2d = np.array(face_2d, dtype=np.float64)
@@ -334,15 +337,13 @@ class HeadPoseEstimation:
                 dist_matrix = np.zeros((4, 1), dtype=np.float64)
 
                 # Solve PnP
-                success, rot_vec, trans_vec = cv2.solvePnP(
-                    face_3d, face_2d, cam_matrix, dist_matrix
-                )
+                _, rot_vec, _ = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
 
                 # Get rotational matrix
-                rmat, jac = cv2.Rodrigues(rot_vec)
+                rmat, _ = cv2.Rodrigues(rot_vec)
 
                 # Get angles
-                angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
+                angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
 
                 # inference information dictionary
                 head_pose = self.create_dict(

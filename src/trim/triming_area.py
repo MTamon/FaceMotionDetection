@@ -1,3 +1,5 @@
+"""This code is for triming area from video which include face each time."""
+
 from logging import Logger
 import math
 import time
@@ -5,7 +7,7 @@ from typing import Tuple, List
 from tqdm import tqdm
 from multiprocessing import Pool, RLock
 
-from .face_detection import Detector
+from src.trim.face_detection import Detector
 from src.utils import Video
 from src.visualizer import Visualizer
 
@@ -13,6 +15,8 @@ PRIMAL_STEP = 5.0
 
 
 class TrimFace:
+    """For triming area from video which include face each time."""
+
     def __init__(
         self,
         logger: Logger,
@@ -44,10 +48,14 @@ class TrimFace:
             logger (Logger):
                 Logger instance.
             min_detection_confidence:
-                Minimum confidence value ([0.0, 1.0]) for face detection to be considered successful. See details in
+                Minimum confidence value ([0.0, 1.0]) for
+                face detection to be considered successful.
+                See details in
                 https://solutions.mediapipe.dev/face_detection#min_detection_confidence.
             model_selection:
-                0 or 1. 0 to select a short-range model that works best for faces within 2 meters from the camera, and 1 for a full-range model best for faces within 5 meters. See details in
+                0 or 1. 0 to select a short-range model that works best for faces within 2 meters
+                from the camera, and 1 for a full-range model best for faces within 5 meters.
+                See details in
                 https://solutions.mediapipe.dev/face_detection#model_selection.
             frame_step (int, optional):
                 Frame loading frequency. Defaults to 1.
@@ -60,9 +68,11 @@ class TrimFace:
             size_volatility (float, optional):
                 Volatility in face size when face detection. Defaults to 0.03.
             sub_track_volatility (float, optional):
-                Volatility of the tracking decision when referring to the last detection position in non-tracking mode, regardless of the period of time lost. Defaults to 1.0.
+                Volatility of the tracking decision when referring to the last detection position
+                in non-tracking mode, regardless of the period of time lost. Defaults to 1.0.
             sub_size_volatility (float, optional):
-                Volatility of the tracking decision when referring to the last detection size in non-tracking mode, regardless of the period of time lost. Defaults to 0.5.
+                Volatility of the tracking decision when referring to the last detection size
+                in non-tracking mode, regardless of the period of time lost. Defaults to 0.5.
             threshold (float, optional):
                 Exclude clippings with low detection rates. Defaults to 0.3.
             overlap (float, optional):
@@ -70,13 +80,15 @@ class TrimFace:
             integrate_step (int, optional):
                 Integration running frequency. Defaults to 1.
             integrate_volatility (float, optional):
-                Allowable volatility of size features between two clippings when integrating clippings. Defaults to 0.4.
+                Allowable volatility of size features between two clippings
+                when integrating clippings. Defaults to 0.4.
             use_tracking (bool, optional):
                 Whether or not to use the face tracking feature. Defaults to True.
             prohibit_integrate (float, optional):
                 Threshold to prohibit integration of clippings. Defaults to 0.7.
             size_limit_rate (int, optional):
-                Maximum size of the clipping relative to the size of the detected face. Defaults to 4.
+                Maximum size of the clipping relative to the size of the detected face.
+                Defaults to 4.
             gc (float, optional):
                 Success rate thresholds in garbage collect during gc_term. Defaults to 0.03.
             gc_term (int, optional):
@@ -84,7 +96,8 @@ class TrimFace:
             gc_success (float, optional):
                 Success rate thresholds in garbage collect. Defaults to 0.1.
             lost_track (int, optional):
-                Number of turns of steps to search the vicinity when face detection is lost. Defaults to 2.
+                Number of turns of steps to search the vicinity when face detection is lost.
+                Defaults to 2.
             process_num (int, optional):
                 Maximum number of processes in parallel processing. Defaults to 3.
             visualize (bool, optional):
@@ -110,7 +123,7 @@ class TrimFace:
         self.use_tracking = use_tracking
         self.prohibit_integrate = prohibit_integrate
         self.size_limit_rate = size_limit_rate
-        self.gc = gc
+        self.gc_standard = gc
         self.gc_term = gc_term
         self.gc_success = gc_success
         self.lost_track = lost_track
@@ -120,7 +133,8 @@ class TrimFace:
     def __call__(self, paths: List[Tuple[str]]) -> List[List[dict]]:
         """
         Args:
-            paths (List[Tuple[str]]): paths have input-video path. in visualize-mode have output-path.
+            paths (List[Tuple[str]]): paths have input-video path.
+            in visualize-mode have output-path.
 
         Returns:
             List: This structure [process][comp or all_area][all]
@@ -151,7 +165,7 @@ class TrimFace:
             dw_sorted.reverse()
 
             # generate process
-            for n, (i, _) in enumerate(dw_sorted):
+            for process_idx, (i, _) in enumerate(dw_sorted):
                 proc_path = batch[i]
                 output = None
                 if len(proc_path) >= 2:
@@ -159,11 +173,11 @@ class TrimFace:
 
                 self.logger.info(f"process:{i+1} go.")
 
-                arg_set.append([proc_path[0], output, True, n])
+                arg_set.append([proc_path[0], output, True, process_idx])
 
             tqdm.set_lock(RLock())
-            p = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
-            results += p.starmap(self.triming_face, arg_set)
+            pool = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
+            results += pool.starmap(self.triming_face, arg_set)
 
             for i in range(len(batch)):
                 self.logger.info(
@@ -177,6 +191,8 @@ class TrimFace:
     def triming_face(
         self, v_path: str, out: str = None, prog: bool = False, idx: int = 0
     ) -> List[dict]:
+        """A process of triming face."""
+
         video = Video(v_path, "mp4v")
         if self.visualize:
             if out is None:
@@ -222,15 +238,17 @@ class TrimFace:
             updates = self.update_table(face_ids, faces)
 
             # update face_area
-            for (id, _), face in updates:
+            for (area_id, _), face in updates:
 
-                if id is None:
+                if area_id is None:
                     # add new area
                     area_dict = self.face2area(face, i)
                     face_area.append(area_dict)
                 else:
                     # update existed area
-                    face_area[id] = self.update_area_dict(progress, face_area[id], face)
+                    face_area[area_id] = self.update_area_dict(
+                        progress, face_area[area_id], face
+                    )
 
             # area integration
             if i % self.integrate_step == 0:
@@ -449,8 +467,8 @@ class TrimFace:
                 return tmp_table
 
             exist_flg = False
-            for i, [(id, dist), _, _] in enumerate(tmp_table):
-                if compatible_face_id[0][0] == id:
+            for i, [(face_id, dist), _, _] in enumerate(tmp_table):
+                if compatible_face_id[0][0] == face_id:
                     exist_flg = True
 
                     if compatible_face_id[0][1] < dist:
@@ -566,20 +584,20 @@ class TrimFace:
             face: dict, area: dict, candidates_id: list, ref: str, step: int
         ) -> list:
             _candidates = []
-            for id in candidates_id:
+            for area_id in candidates_id:
 
-                area_width = area[id][ref]["width"]
-                area_height = area[id][ref]["height"]
+                area_width = area[area_id][ref]["width"]
+                area_height = area[area_id][ref]["height"]
                 dist_w = abs(math.log(area_width / face["width"]))
                 dist_h = abs(math.log(area_height / face["height"]))
                 dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * step
-                _candidates = self.insertion_sort(_candidates, (id, dist))
+                _candidates = self.insertion_sort(_candidates, (area_id, dist))
 
             return _candidates
 
         compatible_face_id = []
 
-        for id, area in enumerate(face_area):
+        for face_area_id, area in enumerate(face_area):
             final_detect = None
             volatility1 = 0.0
             volatility2 = 0.0
@@ -605,7 +623,7 @@ class TrimFace:
                 elif not judge_size(face, final_detect, self.sub_size_volatility):
                     pass
                 else:
-                    compatible_face_id.append((id, False, True))
+                    compatible_face_id.append((face_area_id, False, True))
                     continue
 
             # compare coordinates
@@ -616,7 +634,7 @@ class TrimFace:
             if not judge_size(face, area, volatility2):
                 continue
 
-            compatible_face_id.append((id, not area["prev"] is None, False))
+            compatible_face_id.append((face_area_id, not area["prev"] is None, False))
 
         # process for case which more than one candidate is generated
         if len(compatible_face_id) >= 1:
@@ -687,7 +705,7 @@ class TrimFace:
         for area in face_area:
             if area["garbage_collect"]:
                 if area["success"] / progress < self.gc_success:
-                    if area["gc_update"] / self.gc_term < self.gc:
+                    if area["gc_update"] / self.gc_term < self.gc_standard:
                         continue
             area["garbage_collect"] = True
             area["gc_update"] = 0

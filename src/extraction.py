@@ -37,7 +37,7 @@ class Extraction:
 
         # save triming result
         _trimer_result = []
-        for idx, (result, fpath) in enumerate(zip(trimer_result, paths)):
+        for (result, fpath) in zip(trimer_result, paths):
             _trimer_result.append(write_face_area(fpath[2], result))
         trimer_result = _trimer_result
 

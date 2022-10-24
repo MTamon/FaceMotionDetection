@@ -153,6 +153,9 @@ class TrimFace:
         results = []
         cur_idx = 0
 
+        tqdm.set_lock(RLock())
+        pool = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
+
         for idx, batch in enumerate(process_batch):
             arg_set = []
 
@@ -175,8 +178,6 @@ class TrimFace:
 
                 arg_set.append([proc_path[0], output, True, process_idx])
 
-            tqdm.set_lock(RLock())
-            pool = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
             results += pool.starmap(self.triming_face, arg_set)
 
             for i in range(len(batch)):

@@ -1,13 +1,15 @@
 """Thit is test program"""
 
 from argparse import Namespace
-import _path
 from logging import Logger
 from typing import List
 
+from _path import SYSTEM_AREA
 from logger_gen import set_logger
 from argments import get_args
 from src.extraction import Extraction
+
+print(f"connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, args: Namespace, paths: List[str]):

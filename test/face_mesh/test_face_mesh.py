@@ -1,11 +1,13 @@
 """Thit is test program"""
 
-import _path
+from _path import SYSTEM_AREA
 from logging import Logger
 
 from logger_gen import set_logger
 from src.face_mesh.face_mesh import HeadPoseEstimation
 from src.io import load_face_area
+
+print(f"connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, paths):
@@ -36,8 +38,8 @@ def process(logger: Logger, paths):
 
 
 if __name__ == "__main__":
-    logger = set_logger("TEST-HPE", "log/test/test-hpe.log")
-    paths = [
+    log = set_logger("TEST-HPE", "log/test/test-hpe.log")
+    path_list = [
         (
             "./data/test/webcame.mp4",
             "test/face_mesh/out/webcame.hp",
@@ -93,4 +95,4 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test4.area",
         # ),
     ]
-    process(logger, paths)
+    process(log, path_list)

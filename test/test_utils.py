@@ -1,17 +1,21 @@
-import _path
+"""This is test code"""
+
+from _path import SYSTEM_AREA
 
 from src.utils import Video
 from logger_gen import set_logger
 
 from tqdm import tqdm
 
+print(f"connect to {SYSTEM_AREA}")
+
 if __name__ == "__main__":
     # prepare
-    logger = set_logger("TEST-UTILS", "log/test/test-util.log")
-    video = Video('./data/test/short1.mp4', 'mp4v')
-    
+    log = set_logger("TEST-UTILS", "log/test/test-util.log")
+    video = Video("./data/test/short1.mp4", "mp4v")
+
     for i, frame in enumerate(tqdm(video)):
         if frame is None:
-            logger.info('Over Iteration! '+str(i)+'/'+str(video.cap_frames))
+            log.info("Over Iteration! %s/%s", str(i), str(video.cap_frames))
         else:
             continue

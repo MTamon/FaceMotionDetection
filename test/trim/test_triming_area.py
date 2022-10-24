@@ -1,6 +1,6 @@
 """Thit is test program"""
 
-import _path
+from _path import SYSTEM_AREA
 import os
 from logging import Logger
 from typing import List
@@ -8,6 +8,8 @@ from typing import List
 from logger_gen import set_logger
 from src.io import load_face_area, write_face_area
 from src.trim.triming_area import TrimFace
+
+print(f"connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, paths: List[str]):
@@ -51,7 +53,7 @@ def process(logger: Logger, paths: List[str]):
         name = os.path.basename(fpath[0])
 
         success = 0
-        for i, (face, _face) in enumerate(zip(compatible_face, _compatible_face)):
+        for (face, _face) in zip(compatible_face, _compatible_face):
             if face == _face:
                 success += 1
         logger.info(f"{name} / success save & load result : {success}/{len(result)}")

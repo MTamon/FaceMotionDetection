@@ -1,3 +1,6 @@
+"""This code is for connect test code."""
+
 import sys
 
-sys.path.append("C:\\Users\\Mikawa\\Desktop\\Life\\GitHub\\FaceMotionDetection")
+SYSTEM_AREA = "C:\\Users\\Mikawa\\Desktop\\Life\\GitHub\\FaceMotionDetection"
+sys.path.append(SYSTEM_AREA)

@@ -127,3 +127,20 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Video data
+data/
+
+# unit test
+test/trim/out
+test/face_mesh/out
+test/out
+
+# log data
+log/
+
+# Vscode launch file
+.vscode
+
+# yapf style
+.style.yapf

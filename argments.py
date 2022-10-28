@@ -153,6 +153,12 @@ def add_args(parser: ArgumentParser):
         type=int,
         help="result's max step number. memory saving effect. Defaults to 100000.",
     )
+    parser.add_argument(
+        "--redo-exist-result",
+        default=False,
+        action="store_true",
+        help="Redo data analysis against existing result one",
+    )
 
     return parser
 

@@ -8,9 +8,12 @@ from mediapipe.python.solutions.drawing_utils import (
 )
 from mediapipe.python.solutions.face_mesh import FACEMESH_CONTOURS
 from numpy import ndarray
+import numpy as np
 from tqdm import tqdm
 
 from src.utils import Video
+
+# from matplotlib import pyplot as plt
 
 drawSpec = DrawingSpec(thickness=1, circle_radius=1, color=(244, 244, 244))
 
@@ -71,7 +74,7 @@ class Visualizer:
 
         # draw compatible id faces
         if compatible_ids is not None:
-            for (id, _), face in compatible_ids:
+            for (_, _), face in compatible_ids:
                 center = (
                     int(face["xmin"] * frame_width),
                     int(face["ymin"] * frame_height),
@@ -88,11 +91,11 @@ class Visualizer:
         if not head_pose["activation"]:
             return frame
 
-        frame_h, frame_w, frame_c = frame.shape
+        frame_h, frame_w, _ = frame.shape
 
         area_info = head_pose["area"]
         origin = head_pose["origin"]
-        angles = head_pose["angles"]
+        R = head_pose["angles"]
         landmarks = head_pose["landmarks"]
 
         area_width = int(area_info["width"] * frame_w)
@@ -110,8 +113,11 @@ class Visualizer:
         pxcel_x = int(origin[0] * area_width)
         pxcel_y = int(origin[1] * area_height)
 
+        head_direction = np.array([0, 0, -1]) * 200
+        head_direction = np.dot(R, head_direction)
+
         p1 = (pxcel_x, pxcel_y)
-        p2 = (int(pxcel_x + angles[1] * 360 * 5), int(pxcel_y - angles[0] * 360 * 5))
+        p2 = (p1[0] + int(head_direction[0]), p1[1] + int(head_direction[1]))
 
         cv2.line(area_frame, p1, p2, color=(255, 0, 0), thickness=3)
         draw_landmarks(
@@ -139,3 +145,7 @@ class Visualizer:
     @staticmethod
     def frame_writer(frame: ndarray, param: Video):
         param.write(frame)
+
+    @staticmethod
+    def visualize_grads():
+        pass

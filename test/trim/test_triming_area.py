@@ -9,7 +9,7 @@ from logger_gen import set_logger
 from src.io import load_face_area, write_face_area
 from src.trim.triming_area import TrimFace
 
-print(f"connect to {SYSTEM_AREA}")
+print(f"test_triming_area: connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, paths: List[str]):

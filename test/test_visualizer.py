@@ -7,7 +7,7 @@ from logger_gen import set_logger
 from src.utils import Video
 from src.io import load_face_area
 
-print(f"connect to {SYSTEM_AREA}")
+print(f"test_visualizer: connect to {SYSTEM_AREA}")
 
 
 def process(logger, paths):

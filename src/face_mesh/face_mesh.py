@@ -205,6 +205,7 @@ class HeadPoseEstimation:
     def create_dict(
         self,
         step: int,
+        img_size: Iterable[int],
         area_info: dict,
         origin: Iterable,
         angle: Iterable,
@@ -214,9 +215,10 @@ class HeadPoseEstimation:
 
         Args:
             step (int): frame step
+            img_size (Iterable[int]): frame resolution. (width x height)
             area_info (dict): This dict has 'xmin', 'ymin', 'width', 'height', 'birthtime'.
             origin (Iterable): This iter has two elements (x, y) that face nose position.
-            angle (Iterable): This iter has three elements (x, y, z) that face rotation.
+            angle (Iterable): This is 3x3 rotation matrix.
             landmarks (Iterable): This iter has face-mesh landmarks [(x, y, z), ...].
 
         Returns:
@@ -229,11 +231,14 @@ class HeadPoseEstimation:
         area["height"] = area_info["height"]
         area["birthtime"] = area_info["birthtime"]
 
+        resolution = (img_size[0], img_size[1])
+
         activation = step >= area["birthtime"]
 
         return {
             "step": step,
             "area": area,
+            "resolution": resolution,
             "origin": origin,
             "angles": angle,
             "landmarks": landmarks,
@@ -255,12 +260,38 @@ class HeadPoseEstimation:
             int(y_up * frame_h),
         )
 
+    def calc_R(self, lm, img_w, img_h) -> np.ndarray:
+        """Calculate rotation matrix"""
+        scale_vec = np.array([img_w, img_h, img_w])
+        p33 = np.array([lm[33].x, lm[33].y, lm[33].z]) * scale_vec
+        p263 = np.array([lm[263].x, lm[263].y, lm[263].z]) * scale_vec
+        p152 = np.array([lm[152].x, lm[152].y, lm[152].z]) * scale_vec
+        p10 = np.array([lm[10].x, lm[10].y, lm[10].z]) * scale_vec
+
+        _x = p263 - p33
+        x = _x / np.linalg.norm(_x)
+
+        _y = p152 - p10
+        xy = x * np.dot(x, _y)
+        y = _y - xy
+        y = y / np.linalg.norm(y)
+
+        z = np.cross(x, y)
+        z = z / np.linalg.norm(y)
+
+        R = np.array([x, y, z])
+
+        return R
+
     def process(
         self, step: int, area: dict, frame: np.ndarray, face_mesh: FaceMesh
     ) -> List[dict]:
 
+        img_h, img_w, _ = frame.shape
+        resolution = (img_w, img_h)
+
         if step < area["birthtime"]:
-            return [self.create_dict(step, area, None, None, None)]
+            return [self.create_dict(step, resolution, area, None, None, None)]
 
         # Flip the image horizontally for a later selfie-view display
         # Also convert the color space from BGR to RGB
@@ -289,71 +320,21 @@ class HeadPoseEstimation:
         if recognission.multi_face_landmarks:
             for face_landmarks in recognission.multi_face_landmarks:
 
-                face_3d = []
-                face_2d = []
+                lm = face_landmarks.landmark
 
-                for idx, landmark in enumerate(face_landmarks.landmark):
-                    if (
-                        idx == 33
-                        or idx == 263
-                        or idx == 1
-                        or idx == 61
-                        or idx == 291
-                        or idx == 152
-                        or idx == 10
-                    ):
-                        if idx == 1:
-                            nose_3d = (landmark.x, landmark.y, landmark.z)
-                            continue
+                R = self.calc_R(lm, img_w, img_h)
 
-                        x, y = int(landmark.x * img_w), int(landmark.y * img_h)
-
-                        # Get the 2D Coordinates
-                        face_2d.append([x, y])
-
-                        # Get the 3D Coordinates
-                        face_3d.append([x, y, landmark.z])
-
-                # Convert it to the NumPy array
-                face_2d = np.array(face_2d, dtype=np.float64)
-                face_2d = face_2d - face_2d.mean(axis=0)
-
-                # Convert it to the NumPy array
-                face_3d = np.array(face_3d, dtype=np.float64)
-                face_3d = face_3d - face_3d.mean(axis=0)
-
-                # The camera matrix
-                focal_length = 1 * img_w
-
-                cam_matrix = np.array(
-                    [
-                        [focal_length, 0, img_h / 2],
-                        [0, focal_length, img_w / 2],
-                        [0, 0, 1],
-                    ]
-                )
-
-                # The distortion parameters
-                dist_matrix = np.zeros((4, 1), dtype=np.float64)
-
-                # Solve PnP
-                _, rot_vec, _ = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
-
-                # Get rotational matrix
-                rmat, _ = cv2.Rodrigues(rot_vec)
-
-                # Get angles
-                angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
+                nose_3d = [lm[1].x, lm[1].y, lm[1].z]
 
                 # inference information dictionary
                 head_pose = self.create_dict(
-                    step, area, nose_3d, angles, face_landmarks
+                    step, resolution, area, nose_3d, R.T, face_landmarks
                 )
 
                 results.append(head_pose)
 
         if results == []:
-            return [self.create_dict(step, area, None, None, None)]
+            return [self.create_dict(step, resolution, area, None, None, None)]
 
         return results
 

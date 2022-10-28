@@ -9,7 +9,7 @@ from logger_gen import set_logger
 from argments import get_args
 from src.extraction import Extraction
 
-print(f"connect to {SYSTEM_AREA}")
+print(f"test_extraction: connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, args: Namespace, paths: List[str]):
@@ -36,6 +36,13 @@ if __name__ == "__main__":
             "test/out/webcame2.area",
             "test/out/webcame2T.mp4",
             "test/out/webcame2F.mp4",
+        ),
+        (
+            "./data/test/webcame3.mp4",
+            "test/out/webcame3.hp",
+            "test/out/webcame3.area",
+            "test/out/webcame3T.mp4",
+            "test/out/webcame3F.mp4",
         ),
         (
             "./data/test/short1.mp4",

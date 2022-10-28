@@ -10,10 +10,10 @@ from mediapipe.python.solutions.face_mesh import FACEMESH_CONTOURS
 from numpy import ndarray
 import numpy as np
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 from src.utils import Video
 
-# from matplotlib import pyplot as plt
 
 drawSpec = DrawingSpec(thickness=1, circle_radius=1, color=(244, 244, 244))
 
@@ -147,5 +147,48 @@ class Visualizer:
         param.write(frame)
 
     @staticmethod
-    def visualize_grads():
-        pass
+    def visualize_grads(results, result_title):
+        pg1_x = []
+        pg1_y = []
+        pg2_x = []
+        pg2_y = []
+        rg1_x = []
+        rg1_y = []
+        rg2_x = []
+        rg2_y = []
+
+        for result in results:
+
+            if result["grad1"] is not None:
+                pg1_x.append(result["step"])
+                pg1_y.append(np.linalg.norm(result["grad1"]))
+            if result["grad2"] is not None:
+                pg2_x.append(result["step"])
+                pg2_y.append(np.linalg.norm(result["grad2"]))
+            if result["gradR1"] is not None:
+                rg1_x.append(result["step"])
+                rg1_y.append(result["gradR1"])
+            if result["gradR2"] is not None:
+                rg2_x.append(result["step"])
+                rg2_y.append(result["gradR2"])
+
+        fig = plt.figure()
+
+        ax_pg1 = fig.add_subplot(221)
+        ax_pg2 = fig.add_subplot(222)
+        ax_rg1 = fig.add_subplot(223)
+        ax_rg2 = fig.add_subplot(224)
+
+        plt.subplots_adjust(wspace=0.5, hspace=0.5)
+
+        ax_pg1.set_title("position_grad1")
+        ax_pg2.set_title("position_grad2")
+        ax_rg1.set_title("rotation_grad1")
+        ax_rg2.set_title("rotation_grad2")
+
+        ax_pg1.scatter(pg1_x, pg1_y, 2)
+        ax_pg2.scatter(pg2_x, pg2_y, 2)
+        ax_rg1.scatter(rg1_x, rg1_y, 2)
+        ax_rg2.scatter(rg2_x, rg2_y, 2)
+
+        plt.savefig(result_title)

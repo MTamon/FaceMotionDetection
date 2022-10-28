@@ -72,6 +72,11 @@ if __name__ == "__main__":
             "test/trim/out/webcame2.mp4",
             "test/trim/out/webcame2.area",
         ),
+        (
+            "./data/test/webcame3.mp4",
+            "test/trim/out/webcame3.mp4",
+            "test/trim/out/webcame3.area",
+        ),
         # (
         #     "./data/test/short1.mp4",
         #     "test/trim/out/short1.mp4",

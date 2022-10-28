@@ -135,6 +135,7 @@ data/
 test/trim/out
 test/face_mesh/out
 test/out
+out/
 
 # log data
 log/

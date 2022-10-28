@@ -68,12 +68,17 @@ class HeadPoseEstimation:
         """
 
         results = []
+        all_process = len(all_phase_args)
 
-        for phase_args in all_phase_args:
+        for idx, phase_args in enumerate(all_phase_args):
             video_path = phase_args[0]
             hp_file_path = phase_args[1]
             phase_area = phase_args[2]
             visualize_path = None
+
+            self.logger.info(
+                f"Progress: {(idx+1)}/{all_process} ... {os.path.basename(phase_args[0])}"
+            )
 
             if self.visualize:
                 if len(phase_args) < 4:

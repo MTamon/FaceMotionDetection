@@ -8,6 +8,7 @@ import numpy as np
 
 from src.io import load_head_pose
 from src.utils import Video
+from src.visualizer import Visualizer
 
 
 class Shaper:
@@ -27,6 +28,8 @@ class Shaper:
         """
         all_process = len(paths)
 
+        results = []
+
         for idx, (input_path, video_path, output_path) in enumerate(paths):
             video = Video(video_path, "mp4v")
             resolution = (video.cap_width, video.cap_height)
@@ -38,9 +41,15 @@ class Shaper:
 
             hme_result = load_head_pose(input_path)
 
-            results = self.init_analysis(hme_result, resolution)
+            result_init = self.init_analysis(hme_result, resolution)
 
-            return results
+            results.append(result_init)
+
+            if self.visualize:
+                out_graph_path = ".".join([output_path.split(".")[0], "png"])
+                Visualizer.visualize_grads(result_init, out_graph_path)
+
+        return results
 
     def init_analysis(
         self,
@@ -69,6 +78,7 @@ class Shaper:
         name = "     (Init)    "
         for step in tqdm(range(all_step), desc=name):
             result_dict = {
+                "step": step,
                 "countenance": None,
                 "rotate": None,
                 "centroid": None,
@@ -90,15 +100,15 @@ class Shaper:
                 continue
 
             lms = []
-            for lm in mp_lmarks:
+            for lm in mp_lmarks.landmark:
                 lm = np.array([lm.x, lm.y, lm.z]) * scale_vec
                 lms.append(lm)
             lms = np.array(lms)
 
-            R = self.calc_R(lms, *resolution)
+            R = self.calc_R(lms)
             result_dict["rotate"] = R
 
-            forward_face, centroid, ratio = self.rotate(lms, R, *resolution)
+            forward_face, centroid, ratio = self.rotate(lms, R)
             result_dict["countenance"] = forward_face
             result_dict["centroid"] = centroid
             result_dict["ratio"] = ratio
@@ -112,10 +122,11 @@ class Shaper:
                 theta = np.arccos(cos_theta)
                 gradR = abs(self.r * theta)
                 result_dict["gradR1"] = gradR
+
+                if prev_gradR is not None:
+                    result_dict["gradR2"] = abs(gradR - prev_gradR)
+                prev_gradR = gradR
             prev_R = R
-            if prev_gradR is not None:
-                result_dict["gradR2"] = abs(gradR - prev_gradR)
-            prev_gradR = gradR
 
             # below, it is not speed and acceleration
             if prev_centroid is None:
@@ -137,18 +148,12 @@ class Shaper:
 
         return np.array(results)
 
-    def calc_R(self, lm, img_w, img_h) -> np.ndarray:
+    def calc_R(self, lm) -> np.ndarray:
         """Calculate rotation matrix"""
-        scale_vec = np.array([img_w, img_h, img_w])
-        p33 = np.array([lm[33].x, lm[33].y, lm[33].z]) * scale_vec
-        p263 = np.array([lm[263].x, lm[263].y, lm[263].z]) * scale_vec
-        p152 = np.array([lm[152].x, lm[152].y, lm[152].z]) * scale_vec
-        p10 = np.array([lm[10].x, lm[10].y, lm[10].z]) * scale_vec
-
-        _x = p263 - p33
+        _x = lm[263] - lm[33]
         x_c = _x / np.linalg.norm(_x)
 
-        _y = p152 - p10
+        _y = lm[152] - lm[10]
         x_y = x_c * np.dot(x_c, _y)
         y_c = _y - x_y
         y_c = y_c / np.linalg.norm(y_c)
@@ -160,15 +165,8 @@ class Shaper:
 
         return R
 
-    def rotate(self, lms, R: np.ndarray, img_h, img_w) -> np.ndarray:
+    def rotate(self, lmarks: np.ndarray, R: np.ndarray) -> np.ndarray:
         """Rotate face with rotation-matrix."""
-        lmarks = np.array([0, 0, 0])
-        scale_vec = np.array([img_w, img_h, img_w])
-        for lm in lms:
-            m = np.array([lm.x, lm.y, lm.z]) * scale_vec
-            lmarks = np.vstack((lmarks, m))
-        lmarks = lmarks[1:]
-
         centroid = lmarks.mean(axis=0)
         lmarks = lmarks - centroid
 

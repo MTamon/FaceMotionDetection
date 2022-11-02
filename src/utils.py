@@ -3,6 +3,8 @@ import math
 import os
 import cv2
 
+from typing import Iterable, Tuple
+
 
 class Video:
     def __init__(self, video_path: str, codec: str = "mp4v") -> None:
@@ -53,7 +55,7 @@ class Video:
 
         frame = self.cap.read()[1]
         self.current_idx += 1
-        for i in range(self.step - 1):
+        for _ in range(self.step - 1):
             self.cap.read()
         return frame
 
@@ -94,3 +96,33 @@ class Loging_MSG:
         logger.info("#" * len_wall)
         logger.info(f"##   {l_spaces}{msg}{r_spaces}   ##")
         logger.info("#" * len_wall)
+
+
+class CalcTools:
+    """For calculation tools class"""
+
+    @staticmethod
+    def local2global(
+        area: dict, frame_size: Iterable[int], coordinate: Iterable[float]
+    ) -> Tuple[float]:
+        """Transform facemesh coordinate, area-coordinate -> frame-coordinate"""
+        area_xmin = frame_size[0] * area["xmin"]
+        area_ymin = frame_size[1] * area["ymin"]
+        area_width = frame_size[0] * area["width"]
+        area_height = frame_size[1] * area["height"]
+
+        relative_x = area_width * coordinate[0]
+        relative_y = area_height * coordinate[1]
+
+        absolute_x = area_xmin + relative_x
+        absolute_y = area_ymin + relative_y
+
+        if len(coordinate) == 3:
+            absolute_z = area_width * coordinate[2]
+            return (
+                absolute_x / frame_size[0],
+                absolute_y / frame_size[1],
+                absolute_z / frame_size[0],
+            )
+
+        return (absolute_x / frame_size[0], absolute_y / frame_size[1])

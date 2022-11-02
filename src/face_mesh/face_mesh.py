@@ -342,28 +342,3 @@ class HeadPoseEstimation:
             return [self.create_dict(step, resolution, area, None, None, None)]
 
         return results
-
-    @staticmethod
-    def local2global(
-        area: dict, frame_size: Iterable[int], coordinate: Iterable[float]
-    ) -> Tuple[float]:
-        area_xmin = frame_size[0] * area["xmin"]
-        area_ymin = frame_size[1] * area["ymin"]
-        area_width = frame_size[0] * area["width"]
-        area_height = frame_size[1] * area["height"]
-
-        relative_x = area_width * coordinate[0]
-        relative_y = area_height * coordinate[1]
-
-        absolute_x = area_xmin + relative_x
-        absolute_y = area_ymin + relative_y
-
-        if len(coordinate) == 3:
-            absolute_z = area_width * coordinate[2]
-            return (
-                absolute_x / frame_size[0],
-                absolute_y / frame_size[1],
-                absolute_z / frame_size[0],
-            )
-
-        return (absolute_x / frame_size[0], absolute_y / frame_size[1])

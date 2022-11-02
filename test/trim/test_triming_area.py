@@ -62,55 +62,65 @@ def process(logger: Logger, paths: List[str]):
 if __name__ == "__main__":
     log = set_logger("TEST-TRIM", "log/test/test-trim.log")
     paths_input = [
+        # (
+        #     "./data/test/webcame.mp4",
+        #     "test/trim/out/result/webcame.mp4",
+        #     "test/trim/out/result/webcame.area",
+        # ),
+        # (
+        #     "./data/test/webcame2.mp4",
+        #     "test/trim/out/result/webcame2.mp4",
+        #     "test/trim/out/result/webcame2.area",
+        # ),
+        # (
+        #     "./data/test/webcame3.mp4",
+        #     "test/trim/out/result/webcame3.mp4",
+        #     "test/trim/out/result/webcame3.area",
+        # ),
+        # (
+        #     "./data/test/webcame4.mp4",
+        #     "test/trim/out/result/webcame4.mp4",
+        #     "test/trim/out/result/webcame4.area",
+        # ),
         (
-            "./data/test/webcame.mp4",
-            "test/trim/out/webcame.mp4",
-            "test/trim/out/webcame.area",
-        ),
-        (
-            "./data/test/webcame2.mp4",
-            "test/trim/out/webcame2.mp4",
-            "test/trim/out/webcame2.area",
-        ),
-        (
-            "./data/test/webcame3.mp4",
-            "test/trim/out/webcame3.mp4",
-            "test/trim/out/webcame3.area",
+            "./data/test/webcame5.mp4",
+            "test/trim/out/result/webcame5.mp4",
+            "test/trim/out/result/webcame5.area",
         ),
         # (
         #     "./data/test/short1.mp4",
-        #     "test/trim/out/short1.mp4",
-        #     "test/trim/out/short1.area",
+        #     "test/trim/out/result/short1.mp4",
+        #     "test/trim/out/result/short1.area",
         # ),
         # (
         #     "./data/test/short2.mp4",
-        #     "test/trim/out/short2.mp4",
-        #     "test/trim/out/short2.area",
+        #     "test/trim/out/result/short2.mp4",
+        #     "test/trim/out/result/short2.area",
         # ),
         # (
         #     "./data/test/midol1s.mp4",
-        #     "test/trim/out/midol1s.mp4",
-        #     "test/trim/out/midol1s.area",
+        #     "test/trim/out/result/midol1s.mp4",
+        #     "test/trim/out/result/midol1s.area",
         # ),
         # (
         #     "./data/test/test1.mp4",
-        #     "test/trim/out/test1.mp4",
-        #     "test/trim/out/test1.area",
+        #     "test/trim/out/result/test1.mp4",
+        #     "test/trim/out/result/test1.area",
         # ),
         # (
         #     "./data/test/test2.mp4",
-        #     "test/trim/out/test2.mp4",
-        #     "test/trim/out/test2.area",
+        #     "test/trim/out/result/test2.mp4",
+        #     "test/trim/out/result/test2.area",
         # ),
         # (
         #     "./data/test/test3.mp4",
-        #     "test/trim/out/test3.mp4",
-        #     "test/trim/out/test3.area",
+        #     "test/trim/out/result/test3.mp4",
+        #     "test/trim/out/result/test3.area",
         # ),
         # (
         #     "./data/test/test4.mp4",
-        #     "test/trim/out/test4.mp4",
-        #     "test/trim/out/test4.area",
+        #     "test/trim/out/result/test4.mp4",
+        #     "test/trim/out/result/test4.area",
         # ),
     ]
     process(log, paths_input)

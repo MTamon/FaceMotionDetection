@@ -18,7 +18,8 @@ def process(logger: Logger, paths):
     shaping = Shaper(
         logger=logger,
         batch_size=3,
-        visualize=visualize,
+        visualize_graph=True,
+        visualize_noise=True,
     )
 
     paths = path_creater(paths)
@@ -103,6 +104,16 @@ if __name__ == "__main__":
             "test/face_mesh/out/webcame3.hp",
             "./data/test/webcame3.mp4",
             "test/shape/out/webcame3.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame4.hp",
+            "./data/test/webcame4.mp4",
+            "test/shape/out/webcame4.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame5.hp",
+            "./data/test/webcame5.mp4",
+            "test/shape/out/webcame5.sh",
         ),
         (
             "test/face_mesh/out/short1.hp",

@@ -1,5 +1,4 @@
 from typing import List
-
 import cv2
 from mediapipe.python.solutions.drawing_utils import (
     DrawingSpec,
@@ -147,48 +146,90 @@ class Visualizer:
         param.write(frame)
 
     @staticmethod
-    def visualize_grads(results, result_title):
-        pg1_x = []
-        pg1_y = []
-        pg2_x = []
-        pg2_y = []
-        rg1_x = []
-        rg1_y = []
-        rg2_x = []
-        rg2_y = []
+    def visualize_grads(results, result_title, stand_size, stand_rotate, hline_pos):
+        def get_plot(key: str):
+            x = []
+            y = []
+            for result in results:
+                if result[key] is not None:
+                    x.append(result["step"])
+                    y.append(np.linalg.norm(result[key]))
+            return {"x": x, "y": y}
 
-        for result in results:
-
-            if result["grad1"] is not None:
-                pg1_x.append(result["step"])
-                pg1_y.append(np.linalg.norm(result["grad1"]))
-            if result["grad2"] is not None:
-                pg2_x.append(result["step"])
-                pg2_y.append(np.linalg.norm(result["grad2"]))
-            if result["gradR1"] is not None:
-                rg1_x.append(result["step"])
-                rg1_y.append(result["gradR1"])
-            if result["gradR2"] is not None:
-                rg2_x.append(result["step"])
-                rg2_y.append(result["gradR2"])
+        pg2 = get_plot("grad2")
+        rg2 = get_plot("gradR2")
+        zg1 = get_plot("gradZ1")
 
         fig = plt.figure()
 
-        ax_pg1 = fig.add_subplot(221)
-        ax_pg2 = fig.add_subplot(222)
-        ax_rg1 = fig.add_subplot(223)
-        ax_rg2 = fig.add_subplot(224)
+        ax_pg2 = fig.add_subplot(311)
+        ax_rg2 = fig.add_subplot(312)
+        ax_zg1 = fig.add_subplot(313)
 
-        plt.subplots_adjust(wspace=0.5, hspace=0.5)
+        plt.subplots_adjust(wspace=0.2, hspace=0.5)
 
-        ax_pg1.set_title("position_grad1")
         ax_pg2.set_title("position_grad2")
-        ax_rg1.set_title("rotation_grad1")
         ax_rg2.set_title("rotation_grad2")
+        ax_zg1.set_title("size_grad1")
 
-        ax_pg1.scatter(pg1_x, pg1_y, 2)
-        ax_pg2.scatter(pg2_x, pg2_y, 2)
-        ax_rg1.scatter(rg1_x, rg1_y, 2)
-        ax_rg2.scatter(rg2_x, rg2_y, 2)
+        plt.rcParams["figure.figsize"] = [20, 12.0]
+
+        ax_pg2.set_ylim(0.0, 0.2)
+        ax_rg2.set_ylim(0.0, 15.0)
+        ax_zg1.set_ylim(0.0, 0.1)
+
+        ax_pg2.scatter(pg2["x"], pg2["y"], 1)
+        ax_rg2.scatter(rg2["x"], rg2["y"], 1)
+        ax_zg1.scatter(zg1["x"], zg1["y"], 1)
+
+        ax_pg2.axhline(hline_pos, color="red")
+        ax_rg2.axhline(stand_rotate, color="red")
+        ax_zg1.axhline(stand_size, color="red")
 
         plt.savefig(result_title)
+
+    @staticmethod
+    def shape_removed(
+        video: Video,
+        results: np.ndarray,
+        hme_result: np.ndarray,
+        threshold_size: float,
+        threshold_rotate: float,
+        threshold_pos: float,
+        path: str,
+    ):
+
+        video.set_out_path(path)
+
+        for i, frame in enumerate(tqdm(video, desc="  (visualize)  ")):
+            step_hme_result = hme_result[i]
+            step_result = results[i]
+            face_mesh = step_hme_result["landmarks"]
+
+            if face_mesh is not None:
+
+                for landmark in face_mesh:
+                    landmark = landmark.astype(np.int32)
+
+                    clr = (255, 255, 255)
+                    flg_none = True
+
+                    if step_result["gradZ1"] is not None:
+                        flg_none = False
+                        if step_result["gradZ1"] > threshold_size:
+                            clr = (50, 50, 255)
+                    if step_result["grad2"] is not None:
+                        flg_none = False
+                        if np.linalg.norm(step_result["grad2"]) > threshold_pos:
+                            clr = (0, 0, 0)
+                    if step_result["gradR2"] is not None:
+                        flg_none = False
+                        if step_result["gradR2"] > threshold_rotate:
+                            clr = (50, 255, 50)
+                    if flg_none:
+                        clr = (255, 50, 50)
+
+                    cv2.drawMarker(
+                        frame, (landmark[0], landmark[1]), clr, cv2.MARKER_STAR, 2
+                    )
+            Visualizer.frame_writer(frame, video)

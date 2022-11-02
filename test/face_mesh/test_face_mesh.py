@@ -58,6 +58,18 @@ if __name__ == "__main__":
         #     "test/face_mesh/out/webcame3.mp4",
         # ),
         # (
+        #     "./data/test/webcame4.mp4",
+        #     "test/face_mesh/out/webcame4.hp",
+        #     load_face_area("test/trim/out/result/webcame4.area"),
+        #     "test/face_mesh/out/webcame4.mp4",
+        # ),
+        (
+            "./data/test/webcame5.mp4",
+            "test/face_mesh/out/webcame5.hp",
+            load_face_area("test/trim/out/result/webcame5.area"),
+            "test/face_mesh/out/webcame5.mp4",
+        ),
+        # (
         #     "./data/test/short1.mp4",
         #     "test/face_mesh/out/short1.hp",
         #     load_face_area("test/trim/out/result/short1.area"),
@@ -69,12 +81,12 @@ if __name__ == "__main__":
         #     load_face_area("test/trim/out/result/short2.area"),
         #     "test/face_mesh/out/short2.mp4",
         # ),
-        (
-            "./data/test/midol1s.mp4",
-            "test/face_mesh/out/midol1s.hp",
-            load_face_area("test/trim/out/result/midol1s.area"),
-            "test/face_mesh/out/midol1s.mp4",
-        ),
+        # (
+        #     "./data/test/midol1s.mp4",
+        #     "test/face_mesh/out/midol1s.hp",
+        #     load_face_area("test/trim/out/result/midol1s.area"),
+        #     "test/face_mesh/out/midol1s.mp4",
+        # ),
         # (
         #     "./data/test/test1.mp4",
         #     "test/face_mesh/out/test1.hp",

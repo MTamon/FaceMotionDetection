@@ -4,7 +4,7 @@ import os
 import time
 from logging import Logger
 from multiprocessing import Process, Queue
-from typing import Iterable, List, Tuple
+from typing import Iterable, List
 
 import cv2
 import numpy as np
@@ -167,6 +167,9 @@ class HeadPoseEstimation:
                     if result[0]["origin"] is not None:
                         frame = Visualizer.head_pose_plotter(frame, result[0])
                     Visualizer.frame_writer(frame, video)
+
+            if self.visualize:
+                video.close_writer()
 
         else:
             for idx, frame in enumerate(video):

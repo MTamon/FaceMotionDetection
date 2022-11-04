@@ -80,6 +80,9 @@ class Video:
     def set_step(self, step):
         self.step = step
 
+    def close_writer(self):
+        self.writer.release()
+
 
 class Loging_MSG:
     @staticmethod

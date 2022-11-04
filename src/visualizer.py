@@ -197,11 +197,17 @@ class Visualizer:
         threshold_rotate: float,
         threshold_pos: float,
         path: str,
+        tqdm_visual: bool = False,
     ):
 
         video.set_out_path(path)
 
-        for i, frame in enumerate(tqdm(video, desc="  (visualize)  ")):
+        if tqdm_visual:
+            progress_iterator = enumerate(tqdm(video, desc="  (visualize)  "))
+        else:
+            progress_iterator = enumerate(video)
+
+        for i, frame in progress_iterator:
             step_hme_result = hme_result[i]
             step_result = results[i]
             face_mesh = step_hme_result["landmarks"]
@@ -233,3 +239,5 @@ class Visualizer:
                         frame, (landmark[0], landmark[1]), clr, cv2.MARKER_STAR, 2
                     )
             Visualizer.frame_writer(frame, video)
+
+        video.close_writer()

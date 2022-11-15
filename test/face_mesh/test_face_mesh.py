@@ -63,11 +63,17 @@ if __name__ == "__main__":
         #     load_face_area("test/trim/out/result/webcame4.area"),
         #     "test/face_mesh/out/webcame4.mp4",
         # ),
+        # (
+        #     "./data/test/webcame5.mp4",
+        #     "test/face_mesh/out/webcame5.hp",
+        #     load_face_area("test/trim/out/result/webcame5.area"),
+        #     "test/face_mesh/out/webcame5.mp4",
+        # ),
         (
-            "./data/test/webcame5.mp4",
-            "test/face_mesh/out/webcame5.hp",
-            load_face_area("test/trim/out/result/webcame5.area"),
-            "test/face_mesh/out/webcame5.mp4",
+            "./data/test/webcame6.mp4",
+            "test/face_mesh/out/webcame6.hp",
+            load_face_area("test/trim/out/result/webcame6.area"),
+            "test/face_mesh/out/webcame6.mp4",
         ),
         # (
         #     "./data/test/short1.mp4",

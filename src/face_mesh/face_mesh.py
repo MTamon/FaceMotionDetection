@@ -269,7 +269,10 @@ class HeadPoseEstimation:
         )
 
     def calc_R(self, lm, img_w, img_h) -> np.ndarray:
-        """Calculate rotation matrix"""
+        """
+        Calculate rotation matrix.
+        Rotate the FaceMesh by R to face the front
+        """
         scale_vec = np.array([img_w, img_h, img_w])
         p33 = np.array([lm[33].x, lm[33].y, lm[33].z]) * scale_vec
         p263 = np.array([lm[263].x, lm[263].y, lm[263].z]) * scale_vec

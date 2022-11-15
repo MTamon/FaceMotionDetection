@@ -82,10 +82,15 @@ if __name__ == "__main__":
         #     "test/trim/out/result/webcame4.mp4",
         #     "test/trim/out/result/webcame4.area",
         # ),
+        # (
+        #     "./data/test/webcame5.mp4",
+        #     "test/trim/out/result/webcame5.mp4",
+        #     "test/trim/out/result/webcame5.area",
+        # ),
         (
-            "./data/test/webcame5.mp4",
-            "test/trim/out/result/webcame5.mp4",
-            "test/trim/out/result/webcame5.area",
+            "./data/test/webcame6.mp4",
+            "test/trim/out/result/webcame6.mp4",
+            "test/trim/out/result/webcame6.area",
         ),
         # (
         #     "./data/test/short1.mp4",

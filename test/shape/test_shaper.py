@@ -14,11 +14,13 @@ print(f"test_shaper: connect to {SYSTEM_AREA}")
 
 def process(logger: Logger, paths):
 
-    visualize = True
     shaping = Shaper(
         logger=logger,
         batch_size=3,
-        visualize=visualize,
+        visualize_graph=False,
+        visualize_noise=False,
+        visualize_interpolation=False,
+        visualize_all=True,
     )
 
     paths = path_creater(paths)
@@ -105,6 +107,16 @@ if __name__ == "__main__":
             "test/shape/out/webcame3.sh",
         ),
         (
+            "test/face_mesh/out/webcame4.hp",
+            "./data/test/webcame4.mp4",
+            "test/shape/out/webcame4.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame5.hp",
+            "./data/test/webcame5.mp4",
+            "test/shape/out/webcame5.sh",
+        ),
+        (
             "test/face_mesh/out/short1.hp",
             "./data/test/short1.mp4",
             "test/shape/out/short1.sh",
@@ -119,25 +131,25 @@ if __name__ == "__main__":
             "./data/test/midol1s.mp4",
             "test/shape/out/midol1s.sh",
         ),
-        # (
-        #     "test/face_mesh/out/test1.hp",
-        #     "./data/test/test1.mp4",
-        #     "test/shape/out/test1.sh",
-        # ),
+        (
+            "test/face_mesh/out/test1.hp",
+            "./data/test/test1.mp4",
+            "test/shape/out/test1.sh",
+        ),
         (
             "test/face_mesh/out/test2.hp",
             "./data/test/test2.mp4",
             "test/shape/out/test2.sh",
         ),
-        # (
-        #     "test/face_mesh/out/test3.hp",
-        #     "./data/test/test3.mp4",
-        #     "test/shape/out/test3.sh",
-        # ),
-        # (
-        #     "test/face_mesh/out/test4.hp",
-        #     "./data/test/test4.mp4",
-        #     "test/shape/out/test4.sh",
-        # ),
+        (
+            "test/face_mesh/out/test3.hp",
+            "./data/test/test3.mp4",
+            "test/shape/out/test3.sh",
+        ),
+        (
+            "test/face_mesh/out/test4.hp",
+            "./data/test/test4.mp4",
+            "test/shape/out/test4.sh",
+        ),
     ]
     process(log, path_list)

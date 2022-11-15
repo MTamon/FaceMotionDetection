@@ -4,7 +4,7 @@ import os
 import time
 from logging import Logger
 from multiprocessing import Process, Queue
-from typing import Iterable, List, Tuple
+from typing import Iterable, List
 
 import cv2
 import numpy as np
@@ -168,6 +168,9 @@ class HeadPoseEstimation:
                         frame = Visualizer.head_pose_plotter(frame, result[0])
                     Visualizer.frame_writer(frame, video)
 
+            if self.visualize:
+                video.close_writer()
+
         else:
             for idx, frame in enumerate(video):
 
@@ -266,7 +269,10 @@ class HeadPoseEstimation:
         )
 
     def calc_R(self, lm, img_w, img_h) -> np.ndarray:
-        """Calculate rotation matrix"""
+        """
+        Calculate rotation matrix.
+        Rotate the FaceMesh by R to face the front
+        """
         scale_vec = np.array([img_w, img_h, img_w])
         p33 = np.array([lm[33].x, lm[33].y, lm[33].z]) * scale_vec
         p263 = np.array([lm[263].x, lm[263].y, lm[263].z]) * scale_vec
@@ -342,28 +348,3 @@ class HeadPoseEstimation:
             return [self.create_dict(step, resolution, area, None, None, None)]
 
         return results
-
-    @staticmethod
-    def local2global(
-        area: dict, frame_size: Iterable[int], coordinate: Iterable[float]
-    ) -> Tuple[float]:
-        area_xmin = frame_size[0] * area["xmin"]
-        area_ymin = frame_size[1] * area["ymin"]
-        area_width = frame_size[0] * area["width"]
-        area_height = frame_size[1] * area["height"]
-
-        relative_x = area_width * coordinate[0]
-        relative_y = area_height * coordinate[1]
-
-        absolute_x = area_xmin + relative_x
-        absolute_y = area_ymin + relative_y
-
-        if len(coordinate) == 3:
-            absolute_z = area_width * coordinate[2]
-            return (
-                absolute_x / frame_size[0],
-                absolute_y / frame_size[1],
-                absolute_z / frame_size[0],
-            )
-
-        return (absolute_x / frame_size[0], absolute_y / frame_size[1])

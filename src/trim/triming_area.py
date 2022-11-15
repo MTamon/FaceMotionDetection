@@ -273,6 +273,9 @@ class TrimFace:
             if self.visualize:
                 Visualizer.face_area_window(face_area, video, frame, origin, updates)
 
+        if self.visualize:
+            video.close_writer()
+
         # final area integration
         _face_area = self.integrate_area(progress, face_area)
         while len(_face_area) != len(face_area):

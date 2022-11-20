@@ -9,7 +9,8 @@ from src.shape.shaper import Shaper
 
 import os
 
-print(f"test_shaper: connect to {SYSTEM_AREA}")
+if __name__ == "__main__":
+    print(f"test_shaper: connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, paths):
@@ -17,8 +18,8 @@ def process(logger: Logger, paths):
     shaping = Shaper(
         logger=logger,
         batch_size=3,
-        visualize_graph=False,
-        visualize_noise=False,
+        visualize_graph=True,
+        visualize_noise=True,
         visualize_interpolation=False,
         visualize_all=True,
     )
@@ -115,6 +116,21 @@ if __name__ == "__main__":
             "test/face_mesh/out/webcame5.hp",
             "./data/test/webcame5.mp4",
             "test/shape/out/webcame5.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame7.hp",
+            "./data/test/webcame7.mp4",
+            "test/shape/out/webcame7.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame8.hp",
+            "./data/test/webcame8.mp4",
+            "test/shape/out/webcame8.sh",
+        ),
+        (
+            "test/face_mesh/out/webcame9.hp",
+            "./data/test/webcame9.mp4",
+            "test/shape/out/webcame9.sh",
         ),
         (
             "test/face_mesh/out/short1.hp",

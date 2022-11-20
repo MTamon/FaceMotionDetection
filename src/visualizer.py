@@ -11,10 +11,82 @@ import numpy as np
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
-from src.utils import Video
+from src.utils import Video, CalcTools as tools
 
 
 drawSpec = DrawingSpec(thickness=1, circle_radius=1, color=(244, 244, 244))
+
+CUBE_SIZE = 600
+CUBE = np.array(
+    [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [0, 1, 1],
+        [1, 1, 1],
+    ]
+)
+CUBE_CONTOURS = np.array(
+    [
+        [0, 1],
+        [0, 2],
+        [1, 3],
+        [2, 3],
+        [4, 5],
+        [4, 6],
+        [5, 7],
+        [6, 7],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 7],
+    ]
+)
+BOTTOM_CONTOURS = np.array([4, 5, 7, 6])
+
+FACE_OVAL = np.array(
+    [
+        10,
+        338,
+        297,
+        332,
+        284,
+        251,
+        389,
+        356,
+        454,
+        323,
+        361,
+        288,
+        397,
+        365,
+        379,
+        378,
+        400,
+        377,
+        152,
+        148,
+        176,
+        149,
+        150,
+        136,
+        172,
+        58,
+        132,
+        93,
+        234,
+        127,
+        162,
+        21,
+        54,
+        103,
+        67,
+        109,
+    ]
+)
 
 
 class Visualizer:
@@ -39,6 +111,8 @@ class Visualizer:
                 )
 
             Visualizer.frame_writer(frame, video)
+
+        video.close_writer()
 
     @staticmethod
     def face_area_window(
@@ -160,7 +234,7 @@ class Visualizer:
         rg2 = get_plot("gradR2")
         zg1 = get_plot("gradZ1")
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(20, 12.0))
 
         ax_pg2 = fig.add_subplot(311)
         ax_rg2 = fig.add_subplot(312)
@@ -171,8 +245,6 @@ class Visualizer:
         ax_pg2.set_title("position_grad2")
         ax_rg2.set_title("rotation_grad2")
         ax_zg1.set_title("size_grad1")
-
-        plt.rcParams["figure.figsize"] = [20, 12.0]
 
         ax_pg2.set_ylim(0.0, 0.2)
         ax_rg2.set_ylim(0.0, 15.0)
@@ -272,33 +344,128 @@ class Visualizer:
         plt.close()
 
     @staticmethod
-    def shape_result(video: Video, result: np.ndarray, path: str, tqdm_visual: bool):
+    def _draw_cude(frame, norm_info, basic_dist):
+        _frame = frame.copy()
+
+        _CUBE = CUBE * CUBE_SIZE
+        _CUBE = _CUBE - np.mean(_CUBE)
+
+        _R = tools.rotation_matrix(*norm_info[1])
+        centroid = norm_info[0]
+        z = centroid[2]
+
+        _z = z + basic_dist
+        dist_volatility = _z / basic_dist
+        ratio = 1 / dist_volatility**2
+
+        _CUBE *= ratio
+
+        _CUBE = np.dot(_R.T, _CUBE.T).T
+        _CUBE += centroid
+
+        bottom_points = []
+        for point in BOTTOM_CONTOURS:
+            bottom_points.append(_CUBE[point, :2])
+        bottom_points = np.stack(bottom_points).astype(np.int32)
+        bottom_points = bottom_points.reshape((1, -1, 2))
+        cv2.fillPoly(frame, bottom_points, (50, 50, 50))
+        for contours in CUBE_CONTOURS:
+            strt = _CUBE[contours[0], :2].astype(np.int32)
+            stop = _CUBE[contours[1], :2].astype(np.int32)
+
+            cv2.line(frame, strt, stop, (255, 50, 255), 2)
+
+        frame = cv2.addWeighted(frame, 0.4, _frame, 0.6, 0)
+
+        return frame
+
+    @staticmethod
+    def shape_result(
+        video: Video,
+        result: ndarray,
+        norm_info: ndarray,
+        basic_dist: float,
+        normalizer: float,
+        path: str,
+        tqdm_visual: bool,
+    ):
         video.set_out_path(path)
 
+        _R = tools.rotation_matrix(*norm_info[1])
+
         if tqdm_visual:
-            progress_iterator = tqdm(result, desc=" visualize-all ")
+            progress_iterator = tqdm(result, desc="  visualize-all ")
         else:
             progress_iterator = result
 
         for step_result, frame in zip(progress_iterator, video):
+            frame = Visualizer._draw_cude(frame, norm_info, basic_dist)
+
             if step_result["ignore"]:
                 Visualizer.frame_writer(frame, video)
                 continue
 
             head_direction = np.array([0.0, 0.0, -1.0])
 
-            centroid = step_result["centroid"]
+            centroid = step_result["centroid"] / normalizer
             R = step_result["rotate"]
             landmarks = step_result["countenance"]
             ratio = step_result["ratio"]
 
+            # Release normalization
+            R = np.dot(_R, R)
+            centroid = np.dot(_R.T, centroid) + norm_info[0]
+
+            clr = (255, 255, 255)
+            if step_result["masked"]:
+                clr = (255, 255, 100)
+
             landmarks /= ratio
             landmarks = np.dot(R.T, landmarks.T).T + centroid
+            angle = tools.rotation_angles(R)
+
+            frame = Visualizer._draw_cude(frame, (centroid, angle), basic_dist)
 
             for pt in landmarks:
-                cv2.drawMarker(
-                    frame, (int(pt[0]), int(pt[1])), (255, 255, 255), cv2.MARKER_STAR, 2
-                )
+                cv2.drawMarker(frame, (int(pt[0]), int(pt[1])), clr, cv2.MARKER_STAR, 2)
+
+            cv2.putText(
+                img=frame,
+                text=f"depth: {round(centroid[2], 2)}",
+                org=(20, 50),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=1.5,
+                color=(0, 255, 0),
+                thickness=2,
+            )
+            x, y, z = angle
+            cv2.putText(
+                frame,
+                "x: " + str(np.round(x, 2)),
+                (500, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
+            cv2.putText(
+                frame,
+                "y: " + str(np.round(y, 2)),
+                (500, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
+            cv2.putText(
+                frame,
+                "z: " + str(np.round(z, 2)),
+                (500, 150),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
 
             head_direction = np.dot(R.T, head_direction)
             head_direction *= 200
@@ -325,7 +492,7 @@ class Visualizer:
         video.set_out_path(path)
 
         if tqdm_visual:
-            progress_iterator = enumerate(tqdm(video, desc="     visualize "))
+            progress_iterator = enumerate(tqdm(video, desc="      visualize "))
         else:
             progress_iterator = enumerate(video)
 

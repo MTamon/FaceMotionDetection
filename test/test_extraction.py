@@ -9,7 +9,8 @@ from logger_gen import set_logger
 from argments import get_args
 from src.extraction import Extraction
 
-print(f"test_extraction: connect to {SYSTEM_AREA}")
+if __name__ == "__main__":
+    print(f"test_extraction: connect to {SYSTEM_AREA}")
 
 
 def process(logger: Logger, args: Namespace, paths: List[str]):

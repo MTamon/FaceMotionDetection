@@ -11,7 +11,7 @@ from multiprocessing import Pool
 import time
 
 from src.io import load_head_pose
-from src.utils import Video, CalcTools
+from src.utils import Video, CalcTools as tools
 from src.visualizer import Visualizer
 
 
@@ -24,12 +24,13 @@ class Shaper:
         batch_size: int = 5,
         threshold_size=0.02,
         threshold_rotate=2.5,
-        threshold_pos=0.043,
+        threshold_pos=0.045,
         visualize_graph: bool = False,
         visualize_noise: bool = False,
         visualize_interpolation: bool = False,
         visualize_all: bool = False,
     ):
+        # parameters
         self.logger = logger
         self.batch_size = batch_size
 
@@ -38,31 +39,45 @@ class Shaper:
         self.visualize_interpolation = visualize_interpolation
         self.visualize_all = visualize_all
 
-        self.radius = 100
         self.threshold_size = threshold_size
         self.threshold_rotate = threshold_rotate
         self.threshold_pos = threshold_pos
-        self.mean_term = 3
 
+        self.mean_term = 3
+        self.z_smoothing_term = 9
         self.threshold_noise = 0.3
-        self.inspection_range = 20
+        self.inspection_range = 30
         self.consective_scs = 5
         self.eject_term = 3
 
         self.order = 7
-        self.enhancement = True
         self.interp_margin = 4
 
-        self.ex_cond_nois_len = 10
-        self.ex_cond_msk_len = 20
+        self.ex_cond_nois_len = 15
+        self.ex_cond_msk_len = 30
 
         self.noise_subtract = 0.2
         self.mask_subtract = 0.05
 
-        self.all_weight_mode = True
         self.enhance_end_weight = 300
 
         self.rotate_limit = 90  # 360 degree base
+
+        # remove
+        self.enhancement = True
+        self.all_weight_mode = True
+
+        # constant
+        self.radius = 100
+        self.scaler = 200
+
+        self.basic_dist = 400
+        self.basic_size = 175
+
+        self.division = np.array([5, 20, 200, 2000])
+        self.angle_roughness = 180 / self.division
+        self.ave_win_size = 6
+        self.stride = np.array([0.0, 1 / 3, 2 / 3])
 
         self.warnings()
 
@@ -78,17 +93,14 @@ class Shaper:
         batches = self.batching(paths)
 
         all_process = len(batches)
-        pool = Pool()
 
         results = []
 
         for idx, batch in enumerate(batches):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
 
-            results += pool.starmap(self.phase, batch)
-            # for element in batch:
-            #     self.phase(*element)
-            #     break
+            with Pool(processes=None) as pool:
+                results += pool.starmap(self.phase, batch)
 
         return results
 
@@ -98,18 +110,22 @@ class Shaper:
         max_id = 0
         max_frame = 0
 
+        used_size = self.batch_size
+        if len(paths) < self.batch_size:
+            used_size = len(paths)
+
         for idx, (input_path, video_path, output_path) in enumerate(paths):
             video = Video(video_path, "mp4v")
             all_frame = video.cap_frames
 
             if all_frame > max_frame:
-                max_id = idx % self.batch_size
+                max_id = idx % used_size
                 max_frame = all_frame
 
             phase_arg_set = [input_path, video_path, output_path, False]
             batch.append(phase_arg_set)
 
-            if (idx + 1) % self.batch_size == 0:
+            if (idx + 1) % used_size == 0:
                 batch[max_id][3] = True
                 batches.append(batch)
                 batch = []
@@ -127,7 +143,6 @@ class Shaper:
     ):
         video = Video(video_path, "mp4v")
         resolution = (video.cap_width, video.cap_height)
-        # fps = video.fps
 
         time.sleep(0.2)
 
@@ -141,25 +156,39 @@ class Shaper:
         # get visualize path
         _out_dir = os.path.dirname(output_path)
         out_dir = os.path.join(_out_dir, process_name)
-        if os.path.isdir(out_dir):
-            shutil.rmtree(out_dir)
-        os.mkdir(out_dir)
+        if self.visualize_interpolation:
+            if os.path.isdir(out_dir):
+                shutil.rmtree(out_dir)
+            os.mkdir(out_dir)
         visual_path = os.path.join(out_dir, process_name)
 
         hme_result = load_head_pose(input_path)
         hme_result = self.to_numpy_landmark(hme_result, resolution, tqdm_visual)
 
-        init_result = self.init_analysis(hme_result, tqdm_visual)
+        init_result, cent_max, cent_min = self.init_analysis(hme_result, tqdm_visual)
+        cent_rough = tools.centroid_roughness(cent_max, cent_min, self.division)
+        norm_info = self.estimate_front(init_result, cent_rough, tqdm_visual)
+        init_result, normalizer = self.normalized_data(init_result, *norm_info)
+        cent_max, cent_min = self.limit_calc(init_result)
+
+        init_result = self.detect_noise(init_result, tqdm_visual)
 
         stable_result = self.remove_unstable_area(init_result, tqdm_visual)
 
-        data_info = self.collect_data_limits()
+        data_info = self.collect_data_limits(cent_max, cent_min)
         interpolation_result = self.interpolation(
             stable_result, data_info, tqdm_visual, visual_path
         )
 
         self.visualize_result(
-            video, hme_result, init_result, stable_result, output_path, tqdm_visual
+            video,
+            hme_result,
+            init_result,
+            interpolation_result,
+            norm_info,
+            output_path,
+            normalizer,
+            tqdm_visual,
         )
 
         return output_path
@@ -184,7 +213,7 @@ class Shaper:
             break
 
         if tqdm_visual:
-            progress_iterator = tqdm(range(all_length), desc="      to-numpy ")
+            progress_iterator = tqdm(range(all_length), desc="       to-numpy ")
         else:
             progress_iterator = range(all_length)
 
@@ -197,7 +226,7 @@ class Shaper:
             facemesh = []
             for landmark in mp_lmarks.landmark:
                 landmark = np.array([landmark.x, landmark.y, landmark.z])
-                landmark = CalcTools.local2global(
+                landmark = tools.local2global(
                     hme_result[step]["area"], resolution, landmark
                 )
                 landmark *= scaler
@@ -208,29 +237,27 @@ class Shaper:
 
         return hme_result
 
-    def init_analysis(self, target: ndarray, tqdm_visual: bool = False) -> ndarray:
+    def init_analysis(
+        self, target: ndarray, tqdm_visual: bool = False
+    ) -> Tuple[ndarray, ndarray, ndarray]:
         """For Initialize Analysis befor Main Analysis
 
         Args:
             target (ndarray): result of HME.
             re_calc (ndarray): re-calculation HME.
         """
-        self.logger.info("Initialize Analysis running ...")
 
         all_step = len(target)
 
-        prev_centroid = None
-        prev_grad1 = None
-        prev_R = None
-        prev_grad_R = None
-        prev_size = None
+        cent_max = np.zeros(3)
+        cent_min = np.full(3, 1e5)
 
         results = []
 
         mean_buf = np.array([None for _ in range(self.mean_term)])
 
         if tqdm_visual:
-            name = "          Init "
+            name = "           Init "
             progress_iterator = tqdm(range(all_step), desc=name)
         else:
             progress_iterator = range(all_step)
@@ -242,16 +269,7 @@ class Shaper:
             facemesh = target[step]["landmarks"]
 
             if facemesh is None:
-                result_dict["noise"] = True
-                result_dict["_noise"] = True
-                result_dict["noise_type"] = "n"
                 results.append(result_dict)
-
-                prev_centroid = None
-                prev_grad1 = None
-                prev_R = None
-                prev_grad_R = None
-                prev_size = None
                 mean_buf[step % self.mean_term] = None
                 continue
 
@@ -266,15 +284,95 @@ class Shaper:
             R = self.calc_R(facemesh)
             result_dict["rotate"] = R
 
-            forward_face, centroid, ratio = self.rotate(facemesh, R)
+            forward_face, centroid, ratio, fsize = self.rotate(facemesh, R)
             result_dict["countenance"] = forward_face
             result_dict["centroid"] = centroid
             result_dict["ratio"] = ratio
+            result_dict["fsize"] = fsize
 
-            scaler = np.linalg.norm(facemesh[1] - facemesh[10])
+            cent_max_state = cent_max < centroid
+            cent_min_state = cent_min > centroid
+            cent_max[cent_max_state] = centroid[cent_max_state]
+            cent_min[cent_min_state] = centroid[cent_min_state]
+
+            results.append(result_dict)
+
+        results = np.array(results)
+        self.clearn_z(results)
+
+        return (results, cent_max, cent_min)
+
+    def clearn_z(self, results: ndarray):
+        results = np.array(results)
+        base_width = self.z_smoothing_term
+        for step, r in enumerate(results):
+            centroid = r["centroid"]
+            if centroid is None:
+                continue
+
+            _z = centroid[2]
+            width_ratio = max(_z - 300, 0) / 100
+            side_width = int(base_width + width_ratio) // 2
+
+            strt_idx = step - side_width
+            stop_idx = step + side_width + 1
+            strt_idx = max(strt_idx, 0)
+            stop_idx = min(stop_idx, len(results))
+
+            elements = 0
+            _cs = []
+            for idx in range(strt_idx, stop_idx):
+                _c = results[idx]["centroid"]
+                if _c is None:
+                    continue
+
+                elements += 1
+                _cs.append(_c[2])
+            mean_z = sum(_cs) / elements
+
+            results[step]["centroid"][2] = mean_z
+
+    def detect_noise(self, target: ndarray, tqdm_visual: bool = False):
+
+        results = []
+
+        prev_centroid = None
+        prev_grad1 = None
+        prev_R = None
+        prev_grad_R = None
+        prev_size = None
+
+        if tqdm_visual:
+            name = "   noise detect "
+            progress_iterator = tqdm(target, desc=name)
+        else:
+            progress_iterator = target
+
+        for result_dict in progress_iterator:
+
+            facemesh = result_dict["countenance"]
+            centroid = result_dict["centroid"]
+            R = result_dict["rotate"]
+            ratio = result_dict["ratio"]
+
+            if facemesh is None:
+                result_dict["noise"] = True
+                result_dict["_noise"] = True
+                result_dict["noise_type"] = "n"
+                results.append(result_dict)
+
+                prev_centroid = None
+                prev_grad1 = None
+                prev_R = None
+                prev_grad_R = None
+                prev_size = None
+                continue
+
+            centroid = centroid.copy() / self.scaler
 
             # face size difference
-            size = np.linalg.norm(facemesh - centroid, axis=1)
+            _centroid = np.mean(facemesh, axis=0)
+            size = np.linalg.norm(facemesh / ratio - _centroid, axis=1)
             if prev_size is not None:
                 volatilitys = np.log(size) - np.log(prev_size)
                 volatility = np.sum(volatilitys) / len(volatilitys)
@@ -308,7 +406,7 @@ class Shaper:
 
             # below, it is not speed and acceleration
             if prev_centroid is not None:
-                grad1 = (centroid - prev_centroid) / scaler
+                grad1 = centroid - prev_centroid
 
                 if prev_grad1 is not None:
                     grad2 = grad1 - prev_grad1
@@ -335,6 +433,7 @@ class Shaper:
             "rotate": None,
             "centroid": None,
             "ratio": None,
+            "fsize": None,
         }
 
         return result_dict
@@ -381,12 +480,23 @@ class Shaper:
 
         return R
 
+    def estimate_z(self, facemesh: ndarray):
+        point_dist = np.linalg.norm(facemesh, axis=-1)
+        fsize = np.mean(point_dist)
+        volatility = fsize / self.basic_size
+        dist_volatility = np.sqrt(1 / volatility)
+        z_dist = self.basic_dist * dist_volatility - self.basic_dist
+
+        return z_dist, fsize
+
     def rotate(self, facemesh: ndarray, R: ndarray) -> Tuple[ndarray, ndarray, ndarray]:
         """Rotate face with rotation-matrix."""
         centroid = facemesh.mean(axis=0)
         facemesh = facemesh - centroid
 
         new_facemesh = np.dot(R, facemesh.T)
+        _z, fsize = self.estimate_z(facemesh)
+        centroid[2] = _z
 
         # normalize face size
         target_size = 200
@@ -397,13 +507,136 @@ class Shaper:
 
         new_facemesh *= ratio
 
-        return (new_facemesh.T, centroid, ratio)
+        return (new_facemesh.T, centroid, ratio, fsize)
+
+    def estimate_front(
+        self, init_result: ndarray, cntrd_roughness: ndarray, tqdm_visual: bool = False
+    ) -> Tuple[ndarray, ndarray]:
+        centroids = []
+        angles = []
+
+        for step_result in init_result:
+            if step_result["centroid"] is None:
+                continue
+
+            centroids.append(step_result["centroid"])
+            angle = tools.rotation_angles(step_result["rotate"])
+            angles.append(angle)
+        centroids = np.stack(centroids)
+        angles = np.stack(angles)
+        _cents = centroids
+        _angls = angles
+
+        mode_cent = None
+        mode_angl = None
+
+        if tqdm_visual:
+            angle_roughness = tqdm(self.angle_roughness, desc=" estimate front ")
+        else:
+            angle_roughness = self.angle_roughness
+
+        iterator = zip(angle_roughness, cntrd_roughness)
+
+        for roughness in iterator:
+            c_rough = roughness[0]
+            a_rough = roughness[1]
+            c_biass = self.stride * c_rough
+            a_biass = self.stride * a_rough
+
+            c_res, a_res = [], []
+
+            for c_b, a_b in zip(c_biass, a_biass):
+                datas = (_cents + c_b, _angls + a_b)
+                cent_info, angl_info = self._estimate_front(datas, roughness)
+                c_res.append(cent_info)
+                a_res.append(angl_info)
+
+            # search max score
+            c_max_scr, a_max_scr = 0, 0
+            c_max_crct, a_max_crct = None, None
+            c_mode, a_mode = None, None
+            for c_r, a_r in zip(c_res, a_res):
+                if c_r[1] > c_max_scr:
+                    c_max_scr = c_r[1]
+                    c_max_crct = c_r[0]
+                    c_mode = c_r[2]
+                if a_r[1] > a_max_scr:
+                    a_max_scr = a_r[1]
+                    a_max_crct = a_r[0]
+                    a_mode = a_r[2]
+
+            _cents = _cents[c_max_crct]
+            _angls = _angls[a_max_crct]
+
+            mode_cent = c_mode
+            mode_angl = a_mode
+
+        return mode_cent, mode_angl
+
+    def _estimate_front(
+        self, _datas: Tuple[ndarray], roughness: Tuple[float]
+    ) -> Tuple[Tuple[ndarray, float]]:
+        _cents = _datas[0]
+        _angls = _datas[1]
+
+        c_rough = roughness[0]
+        a_rough = roughness[1]
+
+        # quantization
+        q_cents = tools.quantiz(_cents, c_rough)
+        q_angls = tools.quantiz(_angls, a_rough)
+
+        # moving average
+        ave_cents = tools.window_average(q_cents.T, self.ave_win_size).T
+        ave_angls = tools.window_average(q_angls.T, self.ave_win_size).T
+
+        # quantization
+        _cents = tools.quantiz(ave_cents, c_rough)
+        _angls = tools.quantiz(ave_angls, a_rough)
+
+        # find mode
+        mode_cent, scr_cent = tools.search_time_mode(_cents)
+        mode_angl, scr_angl = tools.search_time_mode(_angls)
+
+        # get mode muched data
+        _crct_cent = np.sum(_cents == mode_cent, axis=-1)
+        crct_cent = _crct_cent == len(mode_cent)
+        _crct_angl = np.sum(_angls == mode_angl, axis=-1)
+        crct_angl = _crct_angl == len(mode_angl)
+
+        return ((crct_cent, scr_cent, mode_cent), (crct_angl, scr_angl, mode_angl))
+
+    def normalized_data(
+        self, init_result: ndarray, center_cent: ndarray, center_angl: ndarray
+    ) -> ndarray:
+        _R = tools.rotation_matrix(*center_angl)
+
+        _z = center_cent[2] + self.basic_dist
+        dist_volatility = _z / self.basic_dist
+        volatility = 1 / dist_volatility**2
+        fsize = volatility * self.basic_size
+        normalizer = 0.5 / fsize * self.scaler
+
+        for step_result in init_result:
+            if step_result["centroid"] is None:
+                continue
+
+            _cent = step_result["centroid"]
+            _cent = _cent - center_cent  # normalized position
+            _cent = np.dot(_R, _cent)  # normalized angle
+            step_result["centroid"] = _cent * normalizer
+
+            _angl = step_result["rotate"]
+            _angl = np.dot(_R.T, _angl)
+            step_result["rotate"] = _angl
+
+        return init_result, normalizer
 
     def remove_unstable_area(
         self, init_result: Iterable[dict], tqdm_visual: bool = False
     ) -> ndarray:
         if tqdm_visual:
-            progress_iterator = tqdm(init_result, desc="        remove ")
+            progress_iterator = tqdm(init_result, desc="         remove ")
         else:
             progress_iterator = init_result
 
@@ -467,7 +700,7 @@ class Shaper:
 
     def interpolation(
         self,
-        stable_result: List[dict],
+        stable_result: ndarray,
         data_info: dict,
         tqdm_visual: bool = False,
         name: str = None,
@@ -495,7 +728,7 @@ class Shaper:
             return period, max(consective)
 
         if tqdm_visual:
-            progress_iterator = tqdm(stable_result, desc=" Interpolation ")
+            progress_iterator = tqdm(stable_result, desc="  Interpolation ")
         else:
             progress_iterator = stable_result
 
@@ -532,6 +765,17 @@ class Shaper:
                     stable_result[i]["centroid"] = None
                     stable_result[i]["ratio"] = None
                     stable_result[i]["ignore"] = True
+
+                continue
+            if idx + masked_period > all_step - self.interp_margin:
+                for i in range(idx, all_step):
+                    stable_result[i]["countenance"] = None
+                    stable_result[i]["rotate"] = None
+                    stable_result[i]["centroid"] = None
+                    stable_result[i]["ratio"] = None
+                    stable_result[i]["ignore"] = True
+                    stable_result[i]["masked"] = True
+                masked_period = all_step - idx
 
                 continue
 
@@ -695,7 +939,7 @@ class Shaper:
         _centroids = _centroids.T
 
         # interpolation for rotation
-        angles = CalcTools.matrix_to_angles(rotates)
+        angles = tools.matrix_to_angles(rotates)
         _angles = self.complex_interpolation(
             angles.T,
             axis_time,
@@ -708,30 +952,13 @@ class Shaper:
             stable_result=stable_result,
         )
         _angles = _angles.T
-        _rotates = CalcTools.angles_to_matrix(_angles)
+        _rotates = tools.angles_to_matrix(_angles)
 
         # interpolation for countenance
         _countenances = self.linear_interpolation(countenances, linear_time)
 
         # interpolation for ratio
         _ratios = self.linear_interpolation(ratios, linear_time)
-
-        # _countenances = self.complex_interpolation(
-        #     countenances.T,
-        #     linear_time,
-        #     np.array([1.0, 1.0]),
-        #     linear_mask,
-        #     sp_order=1,
-        # )
-        # _countenances = _countenances.T
-
-        # _ratios = self.complex_interpolation(
-        #     ratios,
-        #     linear_time,
-        #     np.array([1.0, 1.0]),
-        #     linear_mask,
-        #     sp_order=1,
-        # )
 
         for i in range(-margin_f, masked_period + margin_b):
             _idx = idx + i
@@ -846,7 +1073,6 @@ class Shaper:
             if _x.ndim != 2:
                 self.logger.warn("Failed to visualize-interpolation")
                 return _x
-            # sr_sele1 = []
             org_mask = []
             for _t in t:
                 if stable_result[_t]["noise"]:
@@ -855,7 +1081,6 @@ class Shaper:
                     org_mask.append("masked")
                 else:
                     org_mask.append("normal")
-                # sr_sele1.append(stable_result[_t])
             mod_mask = []
             for _t in all_time:
                 if stable_result[_t]["noise"]:
@@ -899,14 +1124,29 @@ class Shaper:
 
         return res
 
-    def collect_data_limits(self, area=None) -> Dict[str, Dict[str, ndarray]]:
+    def limit_calc(self, norm_result: ndarray):
+        cent_max = np.zeros(3)
+        cent_min = np.full(3, 1e5)
+
+        for step_r in norm_result:
+            centroid = step_r["centroid"]
+            if centroid is None:
+                continue
+
+            cent_max_state = cent_max < centroid
+            cent_min_state = cent_min > centroid
+            cent_max[cent_max_state] = centroid[cent_max_state]
+            cent_min[cent_min_state] = centroid[cent_min_state]
+
+        return cent_max, cent_min
+
+    def collect_data_limits(
+        self, cent_max: ndarray, cent_min: ndarray
+    ) -> Dict[str, Dict[str, ndarray]]:
         data_limits = {"cent": {}, "angle": {}}
 
-        defo_up = np.array([1280, 720, 1280])
-        defo_low = np.array([0, 0, 0])
-
-        data_limits["cent"]["up_lim"] = defo_up
-        data_limits["cent"]["low_lim"] = defo_low
+        data_limits["cent"]["up_lim"] = (cent_max) * 1.2
+        data_limits["cent"]["low_lim"] = (cent_min) * 1.2
 
         rotate_h_lim = np.full(3, self.rotate_limit)
         rotate_l_lim = np.full(3, -self.rotate_limit)
@@ -920,8 +1160,10 @@ class Shaper:
         video: Video,
         hme_result: ndarray,
         init_result: ndarray,
-        stable_result: ndarray,
+        interp_result: ndarray,
+        norm_info: ndarray,
         output_path: str,
+        normalizer: float,
         tqdm_visual: bool = False,
     ):
         if self.visualize_graph:
@@ -947,7 +1189,15 @@ class Shaper:
             )
         if self.visualize_all:
             out_video_path = ".".join([output_path.split(".")[0] + "ALL", "mp4"])
-            Visualizer.shape_result(video, stable_result, out_video_path, tqdm_visual)
+            Visualizer.shape_result(
+                video,
+                interp_result,
+                norm_info,
+                self.basic_dist,
+                normalizer,
+                out_video_path,
+                tqdm_visual,
+            )
 
     def warnings(self):
         if self.interp_margin > self.consective_scs:
@@ -961,3 +1211,8 @@ class Shaper:
         rest_margin = def_noise * self.eject_term
         if self.interp_margin > rest_margin:
             self.logger.warn("There is a risk of interpolation failure.")
+
+        if self.inspection_range != self.ex_cond_msk_len:
+            self.logger.warn(
+                "It is recommended that 'inspection_range' and 'ex_cond_msk_len' have the same value."
+            )

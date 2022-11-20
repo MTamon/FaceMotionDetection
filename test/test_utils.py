@@ -7,7 +7,8 @@ from logger_gen import set_logger
 
 from tqdm import tqdm
 
-print(f"test_utils: connect to {SYSTEM_AREA}")
+if __name__ == "__main__":
+    print(f"test_utils: connect to {SYSTEM_AREA}")
 
 if __name__ == "__main__":
     # prepare

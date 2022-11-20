@@ -52,6 +52,7 @@ class Video:
 
     def __next__(self):
         if self.current_idx == self.length:
+            self.reset()
             raise StopIteration
 
         frame = self.cap.read()[1]
@@ -275,7 +276,7 @@ class CalcTools:
         return matrix
 
     @staticmethod
-    def rotation_angles(matrix: np.ndarray, order: str = "xyz") -> Tuple[float]:
+    def rotation_angles(matrix: np.ndarray, order: str = "xyz") -> np.ndarray:
         """
         Parameters
             matrix = 3x3 Rotation Matrix
@@ -351,4 +352,86 @@ class CalcTools:
         theta2 = theta2 * 180 / np.pi
         theta3 = theta3 * 180 / np.pi
 
-        return (theta1, theta2, theta3)
+        return np.array((theta1, theta2, theta3))
+
+    @staticmethod
+    def quantiz(datas: np.ndarray, roughness: float) -> np.ndarray:
+        """Quantize a number with a specified coarseness."""
+        _datas = datas / roughness + 0.5
+        return _datas.astype(np.int32) * roughness
+
+    @staticmethod
+    def centroid_roughness(
+        c_max: np.ndarray,
+        c_min: np.ndarray,
+        divide: np.ndarray = np.array([20, 200, 2000]),
+    ):
+        """
+        Determine the roughness of quantization from the maximum and minimum values
+        of the center-of-gravity coordinates
+        """
+
+        c_dif = c_max - c_min
+        c_mid = len(c_dif) / (np.sum(1 / c_dif))
+        c_rough = np.full(len(divide), c_mid) / divide
+
+        return c_rough
+
+    @staticmethod
+    def window_average(datas: np.ndarray, window_size: int) -> np.ndarray:
+        """Averaging time series data using an average window."""
+        window_size = (window_size // 2) * 2 + 1
+
+        if datas.ndim != 1:
+            res = []
+            for dt in datas:
+                dt = CalcTools.window_average(datas=dt, window_size=window_size)
+                res.append(dt)
+            return np.stack(res)
+        else:
+            _dts = []
+            for i, dt in enumerate(datas):
+                sum_window = 0
+                strt_idx = i - window_size // 2
+                stop_idx = i + window_size // 2
+
+                if i < window_size // 2:
+                    strt_idx = 0
+                if len(datas) - 1 - i < window_size // 2:
+                    stop_idx = len(datas)
+                sum_window += np.sum(datas[strt_idx:stop_idx])
+                _dts.append(sum_window / (stop_idx - strt_idx))
+            return np.array(_dts)
+
+    @staticmethod
+    def search_time_mode(time_series: np.ndarray) -> Tuple[np.ndarray, float]:
+        dt_vocab = {}  # {value: [step, [appear, appear, ...]]}
+
+        for step, value in enumerate(time_series):
+            value = tuple(value)
+            if value in dt_vocab.keys():
+                latest_update = dt_vocab[value][0]
+                dt_vocab[value][0] = step
+                if latest_update + 1 == step:
+                    dt_vocab[value][1][-1] += 1
+                else:
+                    dt_vocab[value][1].append(1)
+            else:
+                dt_vocab[value] = [step, [1]]
+        for key in dt_vocab.keys():
+            # {value: [step, [appear, appear, ...], sum, max_length]}
+            max_length = max(dt_vocab[key][1])
+            sum_appear = sum(dt_vocab[key][1])
+            # standardization
+            dt_vocab[key].append(sum_appear / len(dt_vocab))
+            dt_vocab[key].append(max_length / len(dt_vocab))
+
+        max_value = ()
+        max_score = 0
+        for key in dt_vocab.keys():
+            score = dt_vocab[key][2] + 0.5 * dt_vocab[key][3]
+            if score > max_score:
+                max_value = key
+                max_score = score
+
+        return np.array(max_value), max_score

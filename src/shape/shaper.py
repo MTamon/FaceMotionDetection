@@ -21,23 +21,10 @@ class Shaper:
     def __init__(
         self,
         logger: Logger,
-        batch_size: int = 5,
-        threshold_size=0.02,
-        threshold_rotate=2.5,
-        threshold_pos=0.045,
-        mean_term=3,
-        z_smoothing_term=9,
-        threshold_noise=0.3,
-        inspection_range=30,
-        consective_scs=5,
-        eject_term=3,
-        order=7,
-        interp_margin=4,
-        ex_cond_nois_len=15,
-        ex_cond_msk_len=30,
+        order: int = 7,
         noise_subtract=0.2,
         mask_subtract=0.05,
-        enhance_end_weight=300,
+        batch_size: int = 5,
         visualize_graph: bool = False,
         visualize_noise: bool = False,
         visualize_interpolation: bool = False,
@@ -52,33 +39,33 @@ class Shaper:
         self.visualize_interpolation = visualize_interpolation
         self.visualize_all = visualize_all
 
-        self.threshold_size = threshold_size
-        self.threshold_rotate = threshold_rotate
-        self.threshold_pos = threshold_pos
-
-        self.mean_term = mean_term
-        self.z_smoothing_term = z_smoothing_term
-        self.threshold_noise = threshold_noise
-        self.inspection_range = inspection_range
-        self.consective_scs = consective_scs
-        self.eject_term = eject_term
-
         self.order = order
-        self.interp_margin = interp_margin
-
-        self.ex_cond_nois_len = ex_cond_nois_len
-        self.ex_cond_msk_len = ex_cond_msk_len
-
         self.noise_subtract = noise_subtract
         self.mask_subtract = mask_subtract
-
-        self.enhance_end_weight = enhance_end_weight
 
         # remove
         self.enhancement = True
         self.all_weight_mode = True
 
         # constant
+        self.threshold_size = 0.02
+        self.threshold_rotate = 2.5
+        self.threshold_pos = 0.045
+        self.threshold_noise = 0.3
+
+        self.consective_scs = 5
+        self.eject_term = 3
+        self.interp_margin = 4
+
+        self.ex_cond_nois_len = 15
+        self.ex_cond_msk_len = 30
+
+        self.mean_term = 3
+        self.z_smoothing_term = 9
+
+        self.inspection_range = 30
+        self.enhance_end_weight = 300
+
         self.radius = 100
         self.scaler = 200
 

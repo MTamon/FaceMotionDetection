@@ -10,7 +10,7 @@ from numpy import ndarray
 from multiprocessing import Pool
 import time
 
-from src.io import load_head_pose
+from src.io import load_head_pose, write_shaped
 from src.utils import Video, CalcTools as tools
 from src.visualizer import Visualizer
 
@@ -25,6 +25,19 @@ class Shaper:
         threshold_size=0.02,
         threshold_rotate=2.5,
         threshold_pos=0.045,
+        mean_term=3,
+        z_smoothing_term=9,
+        threshold_noise=0.3,
+        inspection_range=30,
+        consective_scs=5,
+        eject_term=3,
+        order=7,
+        interp_margin=4,
+        ex_cond_nois_len=15,
+        ex_cond_msk_len=30,
+        noise_subtract=0.2,
+        mask_subtract=0.05,
+        enhance_end_weight=300,
         visualize_graph: bool = False,
         visualize_noise: bool = False,
         visualize_interpolation: bool = False,
@@ -43,25 +56,23 @@ class Shaper:
         self.threshold_rotate = threshold_rotate
         self.threshold_pos = threshold_pos
 
-        self.mean_term = 3
-        self.z_smoothing_term = 9
-        self.threshold_noise = 0.3
-        self.inspection_range = 30
-        self.consective_scs = 5
-        self.eject_term = 3
+        self.mean_term = mean_term
+        self.z_smoothing_term = z_smoothing_term
+        self.threshold_noise = threshold_noise
+        self.inspection_range = inspection_range
+        self.consective_scs = consective_scs
+        self.eject_term = eject_term
 
-        self.order = 7
-        self.interp_margin = 4
+        self.order = order
+        self.interp_margin = interp_margin
 
-        self.ex_cond_nois_len = 15
-        self.ex_cond_msk_len = 30
+        self.ex_cond_nois_len = ex_cond_nois_len
+        self.ex_cond_msk_len = ex_cond_msk_len
 
-        self.noise_subtract = 0.2
-        self.mask_subtract = 0.05
+        self.noise_subtract = noise_subtract
+        self.mask_subtract = mask_subtract
 
-        self.enhance_end_weight = 300
-
-        self.rotate_limit = 90  # 360 degree base
+        self.enhance_end_weight = enhance_end_weight
 
         # remove
         self.enhancement = True
@@ -73,6 +84,8 @@ class Shaper:
 
         self.basic_dist = 400
         self.basic_size = 175
+
+        self.rotate_limit = 90  # 360 degree base
 
         self.division = np.array([5, 20, 200, 2000])
         self.angle_roughness = 180 / self.division
@@ -191,7 +204,9 @@ class Shaper:
             tqdm_visual,
         )
 
-        return output_path
+        final_result = write_shaped(output_path, interpolation_result)
+
+        return output_path, final_result
 
     def to_numpy_landmark(
         self,
@@ -434,6 +449,9 @@ class Shaper:
             "centroid": None,
             "ratio": None,
             "fsize": None,
+            "noise": False,
+            "masked": False,
+            "ignore": False,
         }
 
         return result_dict
@@ -444,12 +462,9 @@ class Shaper:
         result_dict["grad2"] = None
         result_dict["gradR2"] = None
         result_dict["gradZ1"] = None
-        result_dict["noise"] = False
         result_dict["noise_type"] = ""
-        result_dict["masked"] = False
         result_dict["_masked"] = False
         result_dict["_noise"] = False
-        result_dict["ignore"] = False
 
         return result_dict
 

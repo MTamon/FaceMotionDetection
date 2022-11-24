@@ -1,6 +1,7 @@
 import pickle
 from typing import List
 
+import numpy as np
 from numpy import ndarray
 
 AREA_KEYS = [
@@ -17,7 +18,27 @@ AREA_KEYS = [
     "height_max",
     "success",
 ]
-HWAD_POSE_KEYS = ["step", "area", "origin", "angles", "landmarks", "activation"]
+HEAD_POSE_KEYS = [
+    "step",
+    "area",
+    "resolution",
+    "origin",
+    "angles",
+    "landmarks",
+    "activation",
+]
+
+SHAPE_KEYS = [
+    "step",
+    "countenance",
+    "rotate",
+    "centroid",
+    "ratio",
+    "fsize",
+    "noise",
+    "masked",
+    "ignore",
+]
 
 
 def write_face_area(path, face_area: List[dict]) -> List[dict]:
@@ -51,11 +72,33 @@ def write_head_pose(path, head_pose: ndarray):
 
 
 def load_head_pose(path) -> ndarray:
-    head_pose = None
     with open(path, "rb") as f:
         head_pose = pickle.load(f)
 
     return head_pose
+
+
+def write_shaped(path, shape_result: ndarray) -> ndarray:
+    # extruct key
+    _shape_result = []
+    for step_result in shape_result:
+        _step_result = {}
+        for key in SHAPE_KEYS:
+            _step_result[key] = step_result[key]
+        _shape_result.append(_step_result)
+    shape_result = np.array(_shape_result)
+
+    # output by pickle
+    with open(path, "wb") as f:
+        pickle.dump(shape_result, f)
+
+    return shape_result
+
+
+def load_shaped(path) -> ndarray:
+    with open(path, "rb") as f:
+        shaped = pickle.load(f)
+    return shaped
 
 
 class InvalidDictError(Exception):

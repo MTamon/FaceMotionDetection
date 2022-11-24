@@ -63,36 +63,36 @@ def process(logger: Logger, paths: List[str]):
 if __name__ == "__main__":
     log = set_logger("TEST-TRIM", "log/test/test-trim.log")
     paths_input = [
-        # (
-        #     "./data/test/webcame.mp4",
-        #     "test/trim/out/result/webcame.mp4",
-        #     "test/trim/out/result/webcame.area",
-        # ),
-        # (
-        #     "./data/test/webcame2.mp4",
-        #     "test/trim/out/result/webcame2.mp4",
-        #     "test/trim/out/result/webcame2.area",
-        # ),
-        # (
-        #     "./data/test/webcame3.mp4",
-        #     "test/trim/out/result/webcame3.mp4",
-        #     "test/trim/out/result/webcame3.area",
-        # ),
-        # (
-        #     "./data/test/webcame4.mp4",
-        #     "test/trim/out/result/webcame4.mp4",
-        #     "test/trim/out/result/webcame4.area",
-        # ),
-        # (
-        #     "./data/test/webcame5.mp4",
-        #     "test/trim/out/result/webcame5.mp4",
-        #     "test/trim/out/result/webcame5.area",
-        # ),
-        # (
-        #     "./data/test/webcame6.mp4",
-        #     "test/trim/out/result/webcame6.mp4",
-        #     "test/trim/out/result/webcame6.area",
-        # ),
+        (
+            "./data/test/webcame.mp4",
+            "test/trim/out/result/webcame.mp4",
+            "test/trim/out/result/webcame.area",
+        ),
+        (
+            "./data/test/webcame2.mp4",
+            "test/trim/out/result/webcame2.mp4",
+            "test/trim/out/result/webcame2.area",
+        ),
+        (
+            "./data/test/webcame3.mp4",
+            "test/trim/out/result/webcame3.mp4",
+            "test/trim/out/result/webcame3.area",
+        ),
+        (
+            "./data/test/webcame4.mp4",
+            "test/trim/out/result/webcame4.mp4",
+            "test/trim/out/result/webcame4.area",
+        ),
+        (
+            "./data/test/webcame5.mp4",
+            "test/trim/out/result/webcame5.mp4",
+            "test/trim/out/result/webcame5.area",
+        ),
+        (
+            "./data/test/webcame6.mp4",
+            "test/trim/out/result/webcame6.mp4",
+            "test/trim/out/result/webcame6.area",
+        ),
         # (
         #     "./data/test/webcame7.mp4",
         #     "test/trim/out/result/webcame7.mp4",
@@ -143,55 +143,55 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test4.mp4",
         #     "test/trim/out/result/test4.area",
         # ),
-        (
-            "./data/test/test5.mp4",
-            "test/trim/out/result/test5.mp4",
-            "test/trim/out/result/test5.area",
-        ),
-        (
-            "./data/test/test6.mp4",
-            "test/trim/out/result/test6.mp4",
-            "test/trim/out/result/test6.area",
-        ),
-        (
-            "./data/test/test7.mp4",
-            "test/trim/out/result/test7.mp4",
-            "test/trim/out/result/test7.area",
-        ),
-        (
-            "./data/test/test8.mp4",
-            "test/trim/out/result/test8.mp4",
-            "test/trim/out/result/test8.area",
-        ),
-        (
-            "./data/test/test9.mp4",
-            "test/trim/out/result/test9.mp4",
-            "test/trim/out/result/test9.area",
-        ),
-        (
-            "./data/test/test10.mp4",
-            "test/trim/out/result/test10.mp4",
-            "test/trim/out/result/test10.area",
-        ),
-        (
-            "./data/test/test11.mp4",
-            "test/trim/out/result/test11.mp4",
-            "test/trim/out/result/test11.area",
-        ),
-        (
-            "./data/test/test12.mp4",
-            "test/trim/out/result/test12.mp4",
-            "test/trim/out/result/test12.area",
-        ),
-        (
-            "./data/test/test13.mp4",
-            "test/trim/out/result/test13.mp4",
-            "test/trim/out/result/test13.area",
-        ),
-        (
-            "./data/test/test14.mp4",
-            "test/trim/out/result/test14.mp4",
-            "test/trim/out/result/test14.area",
-        ),
+        # (
+        #     "./data/test/test5.mp4",
+        #     "test/trim/out/result/test5.mp4",
+        #     "test/trim/out/result/test5.area",
+        # ),
+        # (
+        #     "./data/test/test6.mp4",
+        #     "test/trim/out/result/test6.mp4",
+        #     "test/trim/out/result/test6.area",
+        # ),
+        # (
+        #     "./data/test/test7.mp4",
+        #     "test/trim/out/result/test7.mp4",
+        #     "test/trim/out/result/test7.area",
+        # ),
+        # (
+        #     "./data/test/test8.mp4",
+        #     "test/trim/out/result/test8.mp4",
+        #     "test/trim/out/result/test8.area",
+        # ),
+        # (
+        #     "./data/test/test9.mp4",
+        #     "test/trim/out/result/test9.mp4",
+        #     "test/trim/out/result/test9.area",
+        # ),
+        # (
+        #     "./data/test/test10.mp4",
+        #     "test/trim/out/result/test10.mp4",
+        #     "test/trim/out/result/test10.area",
+        # ),
+        # (
+        #     "./data/test/test11.mp4",
+        #     "test/trim/out/result/test11.mp4",
+        #     "test/trim/out/result/test11.area",
+        # ),
+        # (
+        #     "./data/test/test12.mp4",
+        #     "test/trim/out/result/test12.mp4",
+        #     "test/trim/out/result/test12.area",
+        # ),
+        # (
+        #     "./data/test/test13.mp4",
+        #     "test/trim/out/result/test13.mp4",
+        #     "test/trim/out/result/test13.area",
+        # ),
+        # (
+        #     "./data/test/test14.mp4",
+        #     "test/trim/out/result/test14.mp4",
+        #     "test/trim/out/result/test14.area",
+        # ),
     ]
     process(log, paths_input)

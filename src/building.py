@@ -20,8 +20,8 @@ class CEJC_Builder:
         path_list = batching(path_list)
 
         for batch in path_list:
-            _path_list = shape_from_extractor_args(batch)
-            shape_result = self.shaper(_path_list)
+            # _path_list = shape_from_extractor_args(batch)
+            shape_result = self.shaper(batch)
 
             sh_path = []
             shape_dicts = []
@@ -30,3 +30,8 @@ class CEJC_Builder:
                 sh_path.append(step_result[0])
                 shape_dicts.append(step_result[1])
                 norms.append(step_result[2])
+
+    def get_shape_inputs(self, path_list):
+        _path_list = shape_from_extractor_args(path_list)
+
+        return _path_list

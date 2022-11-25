@@ -10,7 +10,7 @@ from numpy import ndarray
 from multiprocessing import Pool
 import time
 
-from src.io import load_head_pose, write_shaped
+from src.io import load_head_pose, write_shaped, write_normalizer
 from src.utils import Video, CalcTools as tools
 from src.visualizer import Visualizer
 
@@ -193,7 +193,10 @@ class Shaper:
 
         final_result = write_shaped(output_path, interpolation_result)
 
-        return output_path, final_result
+        norm_path = output_path[:-3] + ".nrmliz"
+        write_normalizer(norm_path, norm_info, normalizer)
+
+        return (output_path, final_result, (norm_info, normalizer))
 
     def to_numpy_landmark(
         self,

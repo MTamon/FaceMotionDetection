@@ -101,5 +101,17 @@ def load_shaped(path) -> ndarray:
     return shaped
 
 
+def write_normalizer(path, norm_info, normalizer):
+    # output by pickle
+    with open(path, "wb") as f:
+        pickle.dump([norm_info, normalizer], f)
+
+
+def load_normalizer(path) -> list:
+    with open(path, "rb") as f:
+        normalizers = pickle.load(f)
+    return normalizers
+
+
 class InvalidDictError(Exception):
     pass

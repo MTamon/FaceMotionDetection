@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 
-def add_args(parser: ArgumentParser):
+def add_fm_args(parser: ArgumentParser):
 
     parser.add_argument(
         "--min-detection-confidence",
@@ -167,6 +167,6 @@ def get_args():
     parser = ArgumentParser(
         "This program is experimental code for getting ability to impliment Face Mesh."
     )
-    parser = add_args(parser)
+    parser = add_fm_args(parser)
 
     return parser.parse_args()

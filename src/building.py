@@ -1,6 +1,7 @@
 """This code is for integrated post-processing"""
 
 from logging import Logger
+from argparse import Namespace
 
 from .shape.shaper import Shaper
 from .much.muching import MuchAV
@@ -8,18 +9,20 @@ from .utils import shape_from_extractor_args, batching
 
 
 class CEJC_Builder:
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, args: Namespace):
         self.logger = logger
+        self.args = args
 
         self.shaper = Shaper(logger)
         self.marger = MuchAV(logger)
 
         self.batch_size = self.shaper.batch_size
 
-    def __call__(self, path_list: list):
-        path_list = batching(path_list)
+    def __call__(self, shaper_list: list, muchav_list: list):
+        shaper_list = batching(shaper_list, self.batch_size)
+        muchav_list = batching(muchav_list, self.batch_size)
 
-        for batch in path_list:
+        for batch in shaper_list:
             # _path_list = shape_from_extractor_args(batch)
             shape_result = self.shaper(batch)
 
@@ -33,5 +36,6 @@ class CEJC_Builder:
 
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)
-
         return _path_list
+
+    # def get_muchav_inputs(self, )

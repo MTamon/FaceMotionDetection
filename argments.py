@@ -164,9 +164,75 @@ def add_fm_args(parser: ArgumentParser):
 
 
 def get_fm_args():
-    parser = ArgumentParser(
-        "This program is experimental code for getting ability to impliment Face Mesh."
-    )
+    parser = ArgumentParser("This program is for making dataset made by Face Mesh.")
     parser = add_fm_args(parser)
+
+    return parser.parse_args()
+
+
+def add_build_args(parser: ArgumentParser):
+
+    parser.add_argument(
+        "--visualize-graph",
+        default=False,
+        action="store_true",
+        help="Visualization options for the volatility of angles and positions. Defaults to False.",
+    )
+
+    parser.add_argument(
+        "--visualize-noise",
+        default=False,
+        action="store_true",
+        help="Visualization options for the analysis noise. When use this option, processing speed is made be lower. Defaults to False.",
+    )
+
+    parser.add_argument(
+        "--visualize-interpolation",
+        default=False,
+        action="store_true",
+        help="Visualization options for the result of interpolation. When use this option, processing speed is made be lower. Defaults to False.",
+    )
+
+    parser.add_argument(
+        "--visualize-all",
+        default=False,
+        action="store_true",
+        help="Visualization options for the results of all process. When use this option, processing speed is made be lower. Defaults to False.",
+    )
+
+    parser.add_argument(
+        "--order",
+        default=7,
+        type=int,
+        help="Interpolation order. Defaults to 7.",
+    )
+
+    parser.add_argument(
+        "--noise-subtract",
+        default=0.2,
+        type=float,
+        help="Interpolation's weight subtraction of noise. Defaults to 0.2.",
+    )
+
+    parser.add_argument(
+        "--mask-subtract",
+        default=0.05,
+        type=float,
+        help="Interpolation's weight subtraction of mask area. Defaults to 0.05.",
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        default=5,
+        type=int,
+        help="Multi-process batch size. Defaults to 5.",
+    )
+
+    return parser
+
+
+def get_build_args():
+    parser = ArgumentParser("This program is for building dataset which is for CEJC .")
+    parser = add_build_args(parser)
 
     return parser.parse_args()

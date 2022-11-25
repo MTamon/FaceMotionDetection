@@ -6,7 +6,7 @@ from typing import List
 
 from _path import SYSTEM_AREA
 from logger_gen import set_logger
-from argments import get_args
+from argments import get_fm_args
 from src.extraction import Extraction
 
 if __name__ == "__main__":
@@ -22,7 +22,7 @@ def process(logger: Logger, args: Namespace, paths: List[str]):
 
 if __name__ == "__main__":
     log = set_logger("TEST-EXTRACT", "log/test/test-extract.log")
-    arguments = get_args()
+    arguments = get_fm_args()
     paths_input = [
         (
             "./data/test/webcame.mp4",

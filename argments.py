@@ -163,7 +163,7 @@ def add_fm_args(parser: ArgumentParser):
     return parser
 
 
-def get_args():
+def get_fm_args():
     parser = ArgumentParser(
         "This program is experimental code for getting ability to impliment Face Mesh."
     )

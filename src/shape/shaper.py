@@ -179,10 +179,12 @@ class Shaper:
 
         stable_result = self.remove_unstable_area(init_result, tqdm_visual)
 
-        data_info = self.collect_data_limits(cent_max, cent_min)
+        data_lim = self.collect_data_limits(cent_max, cent_min)
         interpolation_result = self.interpolation(
-            stable_result, data_info, tqdm_visual, visual_path
+            stable_result, data_lim, tqdm_visual, visual_path
         )
+
+        data_info = self.collect_data_infos(interpolation_result)
 
         self.visualize_result(
             video,
@@ -195,7 +197,9 @@ class Shaper:
             tqdm_visual,
         )
 
-        write_shaped(output_path, interpolation_result, norm_info, normalizer, fps)
+        write_shaped(
+            output_path, interpolation_result, norm_info, normalizer, data_info, fps
+        )
 
         return output_path
 
@@ -1173,6 +1177,28 @@ class Shaper:
         data_limits["angle"]["low_lim"] = rotate_l_lim
 
         return data_limits
+
+    def collect_data_infos(self, result: ndarray):
+        res_dict = {
+            "max_length": 0,
+            "available": 0.0,
+        }
+
+        avail_cnt = 0
+        length = 0
+        for step in result:
+            if step["ignore"]:
+                if res_dict["max_length"] < length:
+                    res_dict["max_length"] = length
+                length = 0
+                continue
+
+            length += 1
+            avail_cnt += 1
+
+        res_dict["available"] = avail_cnt / len(result)
+
+        return res_dict
 
     def visualize_result(
         self,

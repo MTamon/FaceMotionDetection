@@ -47,7 +47,7 @@ class MatchAV:
 
         measure_res = {
             "__name__": match_info[".csv"],
-            "__pare__": shape_path,
+            "__pair__": shape_path,
         }
 
         for event in event_list:
@@ -56,12 +56,13 @@ class MatchAV:
             sp_id = event["speakerID"].split("_")[0]  # part of ICXX
 
             if not sp_id in measure_res.keys():
-                measure_res[sp_id] = {"volatility": 0.0, "data_num": 0}
+                measure_res[sp_id] = {"volatility": 0.0, "data_num": 0, "all_data": 0}
 
             target = shape_result[start : end + 1]
             volatility, data_num = self.measure_mouth_movement(target)
             measure_res[sp_id]["volatility"] += volatility
             measure_res[sp_id]["data_num"] += data_num
+            measure_res[sp_id]["all_data"] += end - start
 
         return measure_res
 

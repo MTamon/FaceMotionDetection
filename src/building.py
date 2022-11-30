@@ -2,6 +2,7 @@
 
 from logging import Logger
 from argparse import Namespace
+from typing import List
 
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
@@ -43,7 +44,31 @@ class CEJC_Builder:
 
         for csv_path in prime_csv:
             _group = prime_csv[csv_path]
+            res = self.opt_matching(_group)
+            self.form_index_file(res)
 
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)
         return _path_list
+
+    def opt_matching(self, group: List[dict]):
+        # collect speakerID
+        ids = [_k for _k in group[0].keys() if not _k in ("__name__", "__pair__")]
+
+        prime_id = {}
+        for sp_id in ids:
+            prime_id[sp_id] = []
+
+            for record in group:
+                name = record["__name__"]
+                pair = record["__pair__"]
+                score = record[sp_id]["volatility"] / record[sp_id]["data_num"]
+                used_rate = record[sp_id]["data_num"] / record[sp_id]["all_data"]
+                prime_id[sp_id].append((name, pair, score, used_rate))
+
+        # sort
+
+        return 1
+
+    def form_index_file(self, match_res):
+        pass

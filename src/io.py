@@ -79,7 +79,7 @@ def load_head_pose(path) -> ndarray:
     return head_pose
 
 
-def write_shaped(path, shape_result: ndarray, norm_info, normalizer, fps) -> ndarray:
+def write_shaped(path, shape_result, norm_info, normalizer, data_info, fps) -> ndarray:
     # extruct key
     _shape_result = []
     for step_result in shape_result:
@@ -91,7 +91,7 @@ def write_shaped(path, shape_result: ndarray, norm_info, normalizer, fps) -> nda
 
     # output by pickle
     with open(path, "wb") as f:
-        pickle.dump([shape_result, norm_info, normalizer, fps], f)
+        pickle.dump([shape_result, norm_info, normalizer, fps, data_info], f)
 
     return shape_result
 

@@ -1,5 +1,6 @@
 import pickle
 from typing import List
+import re
 
 import numpy as np
 from numpy import ndarray
@@ -78,7 +79,7 @@ def load_head_pose(path) -> ndarray:
     return head_pose
 
 
-def write_shaped(path, shape_result: ndarray) -> ndarray:
+def write_shaped(path, shape_result: ndarray, norm_info, normalizer, fps) -> ndarray:
     # extruct key
     _shape_result = []
     for step_result in shape_result:
@@ -90,7 +91,7 @@ def write_shaped(path, shape_result: ndarray) -> ndarray:
 
     # output by pickle
     with open(path, "wb") as f:
-        pickle.dump(shape_result, f)
+        pickle.dump([shape_result, norm_info, normalizer, fps], f)
 
     return shape_result
 
@@ -101,17 +102,50 @@ def load_shaped(path) -> ndarray:
     return shaped
 
 
-def write_normalizer(path, norm_info, normalizer):
-    # output by pickle
-    with open(path, "wb") as f:
-        pickle.dump([norm_info, normalizer], f)
-
-
-def load_normalizer(path) -> list:
-    with open(path, "rb") as f:
-        normalizers = pickle.load(f)
-    return normalizers
-
-
 class InvalidDictError(Exception):
     pass
+
+
+def load_luu_csv(path) -> List[dict]:
+    def remove_tail_blank(split_csv: list):
+        if split_csv[-1] == "":
+            return split_csv[:-1]
+        return split_csv
+
+    def shaping(_record: str):
+        _record = remove_tail_blank(_record.split(","))
+        assert len(head_info) < len(_record)
+
+        if len(head_info) > len(_record):
+            dif_len = len(head_info) - len(_record)
+            _record += [""] * dif_len
+
+        return _record
+
+    def convert_data(data: str):
+        res = re.findall(r"([\d]+\.[\d]*|[\d]*\.[\d]+)", data)
+        if res is not None and len(res) == 1:
+            if res[0] == data:
+                return float(data)
+        res = re.findall(r"[\d]+", data)
+        if res is not None and len(res) == 1:
+            if res[0] == data:
+                return int(data)
+        return data
+
+    res_dicts = []
+
+    with open(path, "r", encoding="utf-8") as f:
+        head_info = []
+        for line_no, record in enumerate(f):
+            if line_no == 0:
+                head_info = remove_tail_blank(record.split(","))
+                continue
+            contents = shaping(record)
+
+            res = {}
+            for c, h in zip(contents, head_info):
+                res[h] = convert_data(c)
+            res_dicts.append(res)
+
+    return res_dicts

@@ -10,7 +10,7 @@ from numpy import ndarray
 from multiprocessing import Pool
 import time
 
-from src.io import load_head_pose, write_shaped, write_normalizer
+from src.io import load_head_pose, write_shaped
 from src.utils import Video, CalcTools as tools
 from src.visualizer import Visualizer
 
@@ -48,6 +48,9 @@ class Shaper:
         self.all_weight_mode = True
 
         # constant
+        self.resolution_std = (1280, 720)
+        self.fps_std = 29.97
+
         self.threshold_size = 0.02
         self.threshold_rotate = 2.5
         self.threshold_pos = 0.045
@@ -140,9 +143,10 @@ class Shaper:
         video_path: str,
         output_path: str,
         tqdm_visual: bool = False,
-    ):
+    ) -> str:
         video = Video(video_path, "mp4v")
-        resolution = (video.cap_width, video.cap_height)
+        resolution = self.norm_resolution(video.cap_width, video.cap_height)
+        fps = video.fps
 
         time.sleep(0.2)
 
@@ -171,7 +175,7 @@ class Shaper:
         init_result, normalizer = self.normalized_data(init_result, *norm_info)
         cent_max, cent_min = self.limit_calc(init_result)
 
-        init_result = self.detect_noise(init_result, tqdm_visual)
+        init_result = self.detect_noise(init_result, fps, tqdm_visual)
 
         stable_result = self.remove_unstable_area(init_result, tqdm_visual)
 
@@ -191,12 +195,20 @@ class Shaper:
             tqdm_visual,
         )
 
-        final_result = write_shaped(output_path, interpolation_result)
+        write_shaped(output_path, interpolation_result, norm_info, normalizer, fps)
 
-        norm_path = output_path[:-3] + ".nrmliz"
-        write_normalizer(norm_path, norm_info, normalizer)
+        return output_path
 
-        return (output_path, final_result, (norm_info, normalizer))
+    def norm_resolution(self, width, height):
+        c_w = width / self.resolution_std[0]
+        c_h = height / self.resolution_std[1]
+
+        if c_w < c_h:
+            return (c_w / c_h * self.resolution_std[0], self.resolution_std[1])
+        elif c_w == c_h:
+            return self.resolution_std
+        elif c_w > c_h:
+            return (self.resolution_std[0], c_h / c_w * self.resolution_std[1])
 
     def to_numpy_landmark(
         self,
@@ -337,9 +349,11 @@ class Shaper:
 
             results[step]["centroid"][2] = mean_z
 
-    def detect_noise(self, target: ndarray, tqdm_visual: bool = False):
+    def detect_noise(self, target: ndarray, fps: float, tqdm_visual: bool = False):
 
         results = []
+
+        coef_frate = fps / self.fps_std
 
         prev_centroid = None
         prev_grad1 = None
@@ -381,9 +395,9 @@ class Shaper:
             if prev_size is not None:
                 volatilitys = np.log(size) - np.log(prev_size)
                 volatility = np.sum(volatilitys) / len(volatilitys)
-                result_dict["gradZ1"] = abs(volatility)
+                result_dict["gradZ1"] = abs(volatility) * coef_frate
 
-                if abs(volatility) > self.threshold_size:
+                if result_dict["gradZ1"] > self.threshold_size:
                     result_dict["noise"] = True
                     result_dict["_noise"] = True
                     result_dict["noise_type"] += "s"
@@ -395,7 +409,7 @@ class Shaper:
                 diff_vec = np.dot(np.dot(prev_R, R.T), base_vec)
                 cos_theta = np.dot(diff_vec, base_vec) / self.radius**2
                 theta = np.arccos(cos_theta)
-                grad_R = abs(self.radius * theta)
+                grad_R = abs(self.radius * theta) * coef_frate
 
                 if prev_grad_R is not None:
                     gradR2 = abs(grad_R - prev_grad_R)
@@ -411,7 +425,7 @@ class Shaper:
 
             # below, it is not speed and acceleration
             if prev_centroid is not None:
-                grad1 = centroid - prev_centroid
+                grad1 = (centroid - prev_centroid) * coef_frate
 
                 if prev_grad1 is not None:
                     grad2 = grad1 - prev_grad1

@@ -1196,6 +1196,9 @@ class Shaper:
             length += 1
             avail_cnt += 1
 
+        if res_dict["max_length"] < length:
+            res_dict["max_length"] = length
+
         res_dict["available"] = avail_cnt / len(result)
 
         return res_dict

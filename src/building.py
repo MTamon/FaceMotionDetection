@@ -120,7 +120,8 @@ class CEJC_Builder:
         for (sp_id, pair, _) in match_res:
             wav_path = os.path.join(path, "_".join([dir_name, sp_id + ".wav"]))
             wav_path = "/".join(re.split(r"\\", wav_path))
-            match_info["pairs"].append((pair, wav_path))
+            if os.path.isfile(wav_path):
+                match_info["pairs"].append((pair, wav_path))
 
         return match_info
 

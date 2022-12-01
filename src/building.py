@@ -172,7 +172,7 @@ class CEJC_Builder:
                 _index_list[_pattern[i][idx]] += 1
 
             _index_list, scr = self.search_opt_comb(prime_id, _index_list)
-            res.append((scr, _index_list))
+            res.append((_index_list, scr))
 
             for i in range(len(_pattern_idx)):
                 _pattern_idx[i] += 1

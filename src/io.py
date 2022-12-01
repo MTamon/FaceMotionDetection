@@ -143,7 +143,7 @@ def load_luu_csv(path) -> List[dict]:
     except UnicodeDecodeError:
         encoding = "shift_jis"
 
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding=encoding) as f:
         head_info = []
         for line_no, record in enumerate(f):
             if line_no == 0:

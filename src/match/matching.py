@@ -5,8 +5,6 @@ from typing import List
 from multiprocessing import Pool
 import numpy as np
 
-# from numpy import ndarray
-
 from src.utils import batching
 from src.io import load_shaped, load_luu_csv
 
@@ -44,10 +42,13 @@ class MatchAV:
         all_shape_result = load_shaped(shape_path)
         shape_result = all_shape_result[0]
         fps = all_shape_result[3]
+        data_info = all_shape_result[4]
 
         measure_res = {
             "__name__": match_info[".csv"],
             "__pair__": shape_path,
+            "__max__": data_info["length_max"],
+            "__able__": data_info["available"],
         }
 
         for event in event_list:
@@ -56,7 +57,11 @@ class MatchAV:
             sp_id = event["speakerID"].split("_")[0]  # part of ICXX
 
             if not sp_id in measure_res.keys():
-                measure_res[sp_id] = {"volatility": 0.0, "data_num": 0, "all_data": 0}
+                measure_res[sp_id] = {
+                    "volatility": 0.0,
+                    "data_num": 0,
+                    "all_data": 0,
+                }
 
             target = shape_result[start : end + 1]
             volatility, data_num = self.measure_mouth_movement(target)

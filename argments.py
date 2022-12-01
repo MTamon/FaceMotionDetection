@@ -228,6 +228,20 @@ def add_build_args(parser: ArgumentParser):
         help="Multi-process batch size. Defaults to 5.",
     )
 
+    parser.add_argument(
+        "--threshold-len",
+        default=60,
+        type=int,
+        help="Threshold of available data's max-length under limit. Defaults to 60 (frame)",
+    )
+
+    parser.add_argument(
+        "--threshold-use",
+        default=0.2,
+        type=float,
+        help="Threshold of available data's rate under limit. Defaults to 0.2",
+    )
+
     return parser
 
 

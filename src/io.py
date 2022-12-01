@@ -1,6 +1,7 @@
 import pickle
 from typing import List
 import re
+import os
 
 import numpy as np
 from numpy import ndarray
@@ -149,3 +150,23 @@ def load_luu_csv(path) -> List[dict]:
             res_dicts.append(res)
 
     return res_dicts
+
+
+def write_index_file(match_info: dict):
+    # output by pickle
+    path = match_info["name"]
+    with open(path, "wb") as f:
+        pickle.dump(match_info, f)
+
+
+def load_index_files(dir_path) -> List[dict]:
+    members = os.listdir(dir_path)
+    match_infos = []
+    for _mem in members:
+        if ".avidx" in _mem:
+            if _mem[-6:] == ".avidx":
+                with open(_mem, "rb") as f:
+                    match_info = pickle.load(f)
+                    match_infos.append(match_info)
+
+    return match_infos

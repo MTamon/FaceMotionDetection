@@ -103,7 +103,7 @@ class MatchAV:
                 prevs = pts_len
                 continue
 
-            volatility += abs(pts_len - prevs)
+            volatility += np.sum(abs(pts_len - prevs))
             dt_len += 1
 
         return (volatility, dt_len)

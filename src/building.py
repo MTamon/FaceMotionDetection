@@ -107,18 +107,18 @@ class CEJC_Builder:
         return match_info
 
     def form_index_file(self, match_res):
-        dir_name = os.path.basename(match_res[0][2]).split("-")
-        _index_file_name = dir_name[0] + ".avidx"
+        dir_name = os.path.basename(match_res[0][2]).split("-")[0]
+        _index_file_name = dir_name + ".avidx"
 
         path = os.path.dirname(match_res[0][2])
 
-        idx_path = os.path.join(path, "_".join([path, _index_file_name]))
+        idx_path = os.path.join(path, "_".join([dir_name, _index_file_name]))
         idx_path = "/".join(re.split(r"\\", idx_path))
 
         match_info = {"name": idx_path, "pairs": []}
 
         for (sp_id, pair, _) in match_res:
-            wav_path = os.path.join(path, "_".join([path, sp_id + ".wav"]))
+            wav_path = os.path.join(path, "_".join([dir_name, sp_id + ".wav"]))
             wav_path = "/".join(re.split(r"\\", wav_path))
             match_info["pairs"].append((pair, wav_path))
 

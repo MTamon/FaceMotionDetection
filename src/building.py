@@ -133,7 +133,7 @@ class CEJC_Builder:
 
     def search_opt_comb(
         self, prime_id: OrderedDict, index_list=None
-    ) -> Tuple(List[int], float):
+    ) -> Tuple[List[int], float]:
         if index_list is None:
             index_list = [0] * len(prime_id)
         assert len(index_list) == len(prime_id)

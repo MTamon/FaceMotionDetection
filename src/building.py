@@ -97,8 +97,8 @@ class CEJC_Builder:
         # form result
         res = []
         for idx, sp_id in zip(index_list, prime_id):
-            name = prime_id[sp_id][idx]["__name__"]
-            pair = prime_id[sp_id][idx]["__pair__"]
+            name = prime_id[sp_id][idx]["name"]
+            pair = prime_id[sp_id][idx]["pair"]
             _res = (sp_id, pair, name)
             res.append(_res)
 
@@ -112,13 +112,13 @@ class CEJC_Builder:
 
         path = os.path.dirname(match_res[0][2])
 
-        idx_path = os.path.join(path, "_".join([dir_name, _index_file_name]))
+        idx_path = os.path.join(path, "_".join([path, _index_file_name]))
         idx_path = "/".join(re.split(r"\\", idx_path))
 
         match_info = {"name": idx_path, "pairs": []}
 
         for (sp_id, pair, _) in match_res:
-            wav_path = os.path.join(path, "_".join([dir_name, sp_id + ".wav"]))
+            wav_path = os.path.join(path, "_".join([path, sp_id + ".wav"]))
             wav_path = "/".join(re.split(r"\\", wav_path))
             match_info["pairs"].append((pair, wav_path))
 

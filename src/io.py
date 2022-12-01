@@ -115,7 +115,7 @@ def load_luu_csv(path) -> List[dict]:
 
     def shaping(_record: str):
         _record = remove_tail_blank(_record.split(","))
-        assert len(head_info) < len(_record)
+        assert len(head_info) >= len(_record)
 
         if len(head_info) > len(_record):
             dif_len = len(head_info) - len(_record)
@@ -135,6 +135,13 @@ def load_luu_csv(path) -> List[dict]:
         return data
 
     res_dicts = []
+
+    encoding = "utf-8"
+    try:
+        with open(path, "r", encoding=encoding) as f:
+            f.read()
+    except UnicodeDecodeError:
+        encoding = "shift_jis"
 
     with open(path, "r", encoding="utf-8") as f:
         head_info = []

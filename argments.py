@@ -230,14 +230,14 @@ def add_build_args(parser: ArgumentParser):
 
     parser.add_argument(
         "--threshold-len",
-        default=60,
+        default=50,
         type=int,
         help="Threshold of available data's max-length under limit. Defaults to 60 (frame)",
     )
 
     parser.add_argument(
         "--threshold-use",
-        default=0.2,
+        default=0.1,
         type=float,
         help="Threshold of available data's rate under limit. Defaults to 0.2",
     )

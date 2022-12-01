@@ -63,36 +63,36 @@ def process(logger: Logger, paths: List[str]):
 if __name__ == "__main__":
     log = set_logger("TEST-TRIM", "log/test/test-trim.log")
     paths_input = [
-        (
-            "./data/test/webcame.mp4",
-            "test/trim/out/result/webcame.mp4",
-            "test/trim/out/result/webcame.area",
-        ),
-        (
-            "./data/test/webcame2.mp4",
-            "test/trim/out/result/webcame2.mp4",
-            "test/trim/out/result/webcame2.area",
-        ),
-        (
-            "./data/test/webcame3.mp4",
-            "test/trim/out/result/webcame3.mp4",
-            "test/trim/out/result/webcame3.area",
-        ),
-        (
-            "./data/test/webcame4.mp4",
-            "test/trim/out/result/webcame4.mp4",
-            "test/trim/out/result/webcame4.area",
-        ),
-        (
-            "./data/test/webcame5.mp4",
-            "test/trim/out/result/webcame5.mp4",
-            "test/trim/out/result/webcame5.area",
-        ),
-        (
-            "./data/test/webcame6.mp4",
-            "test/trim/out/result/webcame6.mp4",
-            "test/trim/out/result/webcame6.area",
-        ),
+        # (
+        #     "./data/test/webcame.mp4",
+        #     "test/trim/out/result/webcame.mp4",
+        #     "test/trim/out/result/webcame.area",
+        # ),
+        # (
+        #     "./data/test/webcame2.mp4",
+        #     "test/trim/out/result/webcame2.mp4",
+        #     "test/trim/out/result/webcame2.area",
+        # ),
+        # (
+        #     "./data/test/webcame3.mp4",
+        #     "test/trim/out/result/webcame3.mp4",
+        #     "test/trim/out/result/webcame3.area",
+        # ),
+        # (
+        #     "./data/test/webcame4.mp4",
+        #     "test/trim/out/result/webcame4.mp4",
+        #     "test/trim/out/result/webcame4.area",
+        # ),
+        # (
+        #     "./data/test/webcame5.mp4",
+        #     "test/trim/out/result/webcame5.mp4",
+        #     "test/trim/out/result/webcame5.area",
+        # ),
+        # (
+        #     "./data/test/webcame6.mp4",
+        #     "test/trim/out/result/webcame6.mp4",
+        #     "test/trim/out/result/webcame6.area",
+        # ),
         # (
         #     "./data/test/webcame7.mp4",
         #     "test/trim/out/result/webcame7.mp4",
@@ -193,5 +193,10 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test14.mp4",
         #     "test/trim/out/result/test14.area",
         # ),
+        (
+            "./data/test/test15.mp4",
+            "test/trim/out/result/test15.mp4",
+            "test/trim/out/result/test15.area",
+        ),
     ]
     process(log, paths_input)

@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 def process(logger: Logger, paths):
 
-    visualize = False
+    visualize = True
     hpe = HeadPoseEstimation(
         logger=logger,
         min_detection_confidence=0.7,
@@ -34,42 +34,42 @@ def process(logger: Logger, paths):
 if __name__ == "__main__":
     log = set_logger("TEST-HPE", "log/test/test-hpe.log")
     path_list = [
-        (
-            "./data/test/webcame.mp4",
-            "test/face_mesh/out/webcame.hp",
-            load_face_area("test/trim/out/result/webcame.area"),
-            "test/face_mesh/out/webcame.mp4",
-        ),
-        (
-            "./data/test/webcame2.mp4",
-            "test/face_mesh/out/webcame2.hp",
-            load_face_area("test/trim/out/result/webcame2.area"),
-            "test/face_mesh/out/webcame2.mp4",
-        ),
-        (
-            "./data/test/webcame3.mp4",
-            "test/face_mesh/out/webcame3.hp",
-            load_face_area("test/trim/out/result/webcame3.area"),
-            "test/face_mesh/out/webcame3.mp4",
-        ),
-        (
-            "./data/test/webcame4.mp4",
-            "test/face_mesh/out/webcame4.hp",
-            load_face_area("test/trim/out/result/webcame4.area"),
-            "test/face_mesh/out/webcame4.mp4",
-        ),
-        (
-            "./data/test/webcame5.mp4",
-            "test/face_mesh/out/webcame5.hp",
-            load_face_area("test/trim/out/result/webcame5.area"),
-            "test/face_mesh/out/webcame5.mp4",
-        ),
-        (
-            "./data/test/webcame6.mp4",
-            "test/face_mesh/out/webcame6.hp",
-            load_face_area("test/trim/out/result/webcame6.area"),
-            "test/face_mesh/out/webcame6.mp4",
-        ),
+        # (
+        #     "./data/test/webcame.mp4",
+        #     "test/face_mesh/out/webcame.hp",
+        #     load_face_area("test/trim/out/result/webcame.area"),
+        #     "test/face_mesh/out/webcame.mp4",
+        # ),
+        # (
+        #     "./data/test/webcame2.mp4",
+        #     "test/face_mesh/out/webcame2.hp",
+        #     load_face_area("test/trim/out/result/webcame2.area"),
+        #     "test/face_mesh/out/webcame2.mp4",
+        # ),
+        # (
+        #     "./data/test/webcame3.mp4",
+        #     "test/face_mesh/out/webcame3.hp",
+        #     load_face_area("test/trim/out/result/webcame3.area"),
+        #     "test/face_mesh/out/webcame3.mp4",
+        # ),
+        # (
+        #     "./data/test/webcame4.mp4",
+        #     "test/face_mesh/out/webcame4.hp",
+        #     load_face_area("test/trim/out/result/webcame4.area"),
+        #     "test/face_mesh/out/webcame4.mp4",
+        # ),
+        # (
+        #     "./data/test/webcame5.mp4",
+        #     "test/face_mesh/out/webcame5.hp",
+        #     load_face_area("test/trim/out/result/webcame5.area"),
+        #     "test/face_mesh/out/webcame5.mp4",
+        # ),
+        # (
+        #     "./data/test/webcame6.mp4",
+        #     "test/face_mesh/out/webcame6.hp",
+        #     load_face_area("test/trim/out/result/webcame6.area"),
+        #     "test/face_mesh/out/webcame6.mp4",
+        # ),
         # (
         #     "./data/test/webcame7.mp4",
         #     "test/face_mesh/out/webcame7.hp",
@@ -190,5 +190,11 @@ if __name__ == "__main__":
         #     load_face_area("test/trim/out/result/test14.area"),
         #     "test/face_mesh/out/test14.mp4",
         # ),
+        (
+            "./data/test/test15.mp4",
+            "test/face_mesh/out/test15.hp",
+            load_face_area("test/trim/out/result/test15.area"),
+            "test/face_mesh/out/test15.mp4",
+        ),
     ]
     process(log, path_list)

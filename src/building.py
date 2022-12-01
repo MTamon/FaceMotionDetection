@@ -92,7 +92,8 @@ class CEJC_Builder:
         prime_id = self.sort_prime_id(prime_id)
 
         # Search
-        index_list, _ = self.search_opt_comb(prime_id)
+        # index_list, _ = self.search_opt_comb(prime_id)
+        index_list = [0] * len(prime_id)
 
         # form result
         res = []

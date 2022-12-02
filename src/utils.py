@@ -1,6 +1,7 @@
 from logging import Logger
 import math
 import os
+import re
 import cv2
 import numpy as np
 
@@ -522,6 +523,7 @@ def get_same_files(path) -> List[str]:
                 break
         if not flg:
             exist_flg = True
-            same_list.append(os.path.join(dir_path, file))
+            _path = os.path.join(dir_path, file)
+            same_list.append("/".join(re.split(r"[\\]", _path)))
 
     return exist_flg, same_list

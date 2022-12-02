@@ -13,6 +13,7 @@ import numpy as np
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 import moviepy.editor as mpedit
+from pydub import AudioSegment
 
 from src.utils import Video, CalcTools as tools
 
@@ -543,5 +544,6 @@ class Visualizer:
                 continue
 
             mp4_MTH_path = mp4_ALL_path[:-7] + "MTH.mp4"
-            clip = mpedit.VideoFileClip(mp4_ALL_path).subclip()
-            clip.write_videofile(mp4_MTH_path, audio=wav_path)
+            video = mpedit.VideoFileClip(mp4_ALL_path)
+            video = video.set_audio(mpedit.AudioFileClip(wav_path))
+            video.write_videofile(mp4_MTH_path)

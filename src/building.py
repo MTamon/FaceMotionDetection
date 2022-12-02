@@ -89,6 +89,7 @@ class CEJC_Builder:
                         "name": name,
                         "pair": pair,
                         "score": score,
+                        "sp_id": sp_id,
                     }
                     prime_id[sp_id].append(res_dict)
                 else:
@@ -96,9 +97,11 @@ class CEJC_Builder:
                         "name": name,
                         "pair": pair,
                         "score": 0,
+                        "sp_id": sp_id,
                     }
                     prime_id[sp_id].append(res_dict)
 
+        prime_id = self.softmax_par_pair(prime_id)
         prime_id = self.sort_prime_id(prime_id)
 
         # Search
@@ -117,6 +120,24 @@ class CEJC_Builder:
         match_info = self.form_index_file(res)
 
         return match_info
+
+    def softmax_par_pair(self, prime_id):
+        prime_pair = {}
+        for _k in prime_id:
+            for record in prime_id[_k]:
+                pp_key = record["pair"]
+                if pp_key in prime_pair:
+                    prime_pair[pp_key].append(record)
+                else:
+                    prime_pair[pp_key] = [record]
+        for _k in prime_pair:
+            pair_sum = 0.0
+            for record in prime_pair[_k]:
+                pair_sum += record["score"]
+            for record in prime_pair[_k]:
+                record["score"] /= pair_sum
+
+        return prime_id
 
     def form_index_file(self, match_res):
         dir_name = os.path.basename(match_res[0][2]).split("-")[0]

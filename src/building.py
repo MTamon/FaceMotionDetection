@@ -12,6 +12,7 @@ from .shape.shaper import Shaper
 from .match.matching import MatchAV
 from .utils import shape_from_extractor_args, batching
 from .io import write_index_file
+from .visualizer import Visualizer
 
 
 class CEJC_Builder:
@@ -29,6 +30,7 @@ class CEJC_Builder:
 
         self.threshold_len = args.threshold_len
         self.threshold_use = args.threshold_use
+        self.visualize_match = args.visualize_match
 
     def __call__(
         self, shaper_list: list, matchav_list: list, multi_proc=True, redo_shape=True
@@ -67,6 +69,9 @@ class CEJC_Builder:
             print("\n".join(fp))
             for _fp in fp:
                 self.logger.info(_fp)
+
+            if self.visualize_match:
+                Visualizer.audio_visual_matching(self.logger, match_info)
 
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)

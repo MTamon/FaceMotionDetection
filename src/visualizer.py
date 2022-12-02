@@ -1,5 +1,7 @@
+from logging import Logger
 from typing import Iterable, List
 import cv2
+import os
 from mediapipe.python.solutions.drawing_utils import (
     DrawingSpec,
     draw_detection,
@@ -10,6 +12,7 @@ from numpy import ndarray
 import numpy as np
 from tqdm import tqdm
 from matplotlib import pyplot as plt
+import moviepy.editor as mpedit
 
 from src.utils import Video, CalcTools as tools
 
@@ -530,3 +533,15 @@ class Visualizer:
             Visualizer.frame_writer(frame, video)
 
         video.close_writer()
+
+    @staticmethod
+    def audio_visual_matching(logger: Logger, match_info: dict):
+        for (sh_path, wav_path) in match_info["pairs"]:
+            mp4_ALL_path = sh_path[:-3] + "ALL.mp4"
+            if not os.path.isfile(mp4_ALL_path):
+                logger.warn(f"No such a mp4 file: {mp4_ALL_path}")
+                continue
+
+            mp4_MTH_path = mp4_ALL_path[:-7] + "MTH.mp4"
+            clip = mpedit.VideoFileClip(mp4_ALL_path).subclip()
+            clip.write_videofile(mp4_MTH_path, audio=wav_path)

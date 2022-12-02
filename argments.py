@@ -248,6 +248,12 @@ def add_build_args(parser: ArgumentParser):
         type=float,
         help="Threshold of available data's rate under limit. Defaults to 0.2",
     )
+    parser.add_argument(
+        "--visualize-match",
+        default=False,
+        action="store_true",
+        help="Visualization result of audio-visual matching",
+    )
 
     return parser
 

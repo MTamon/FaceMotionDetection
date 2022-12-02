@@ -19,8 +19,11 @@ class CEJC_Builder:
         self.logger = logger
         self.args = args
 
-        self.shaper = Shaper(logger)
-        self.merger = MatchAV(logger)
+        shaper_args = self.make_args_shaper(logger, args)
+        match_args = self.make_args_match(logger, args)
+
+        self.shaper = Shaper(**shaper_args)
+        self.merger = MatchAV(**match_args)
 
         self.batch_size = self.shaper.batch_size
 
@@ -230,3 +233,25 @@ class CEJC_Builder:
             first_flg = False
 
         return sorted(res, key=lambda x: x[1], reverse=True)[0]
+
+    def make_args_shaper(self, logger: Logger, args: Namespace):
+        shaper_args = {}
+        shaper_args["logger"] = logger
+        shaper_args["order"] = args.order
+        shaper_args["noise_subtract"] = args.noise_subtract
+        shaper_args["mask_subtract"] = args.mask_subtract
+        shaper_args["batch_size"] = args.batch_size
+        shaper_args["visualize_graph"] = args.visualize_graph
+        shaper_args["visualize_noise"] = args.visualize_noise
+        shaper_args["visualize_interpolation"] = args.visualize_interpolation
+        shaper_args["visualize_all"] = args.visualize_all
+        shaper_args["visualize_front"] = args.visualize_front
+
+        return shaper_args
+
+    def make_args_match(self, logger: Logger, args: Namespace):
+        match_args = {}
+        match_args["logger"] = logger
+        match_args["batch_size"] = args.batch_size
+
+        return match_args

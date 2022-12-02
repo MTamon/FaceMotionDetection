@@ -29,6 +29,7 @@ class Shaper:
         visualize_noise: bool = False,
         visualize_interpolation: bool = False,
         visualize_all: bool = False,
+        visualize_front: bool = False,
     ):
         # parameters
         self.logger = logger
@@ -38,6 +39,7 @@ class Shaper:
         self.visualize_noise = visualize_noise
         self.visualize_interpolation = visualize_interpolation
         self.visualize_all = visualize_all
+        self.visualize_front = visualize_front
 
         self.order = order
         self.noise_subtract = noise_subtract

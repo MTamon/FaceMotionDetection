@@ -4,6 +4,7 @@ from logging import Logger
 from typing import List
 from multiprocessing import Pool
 import numpy as np
+from tqdm import tqdm
 
 from src.utils import batching
 from src.io import load_shaped, load_luu_csv
@@ -26,6 +27,7 @@ class MatchAV:
 
         for idx, batch in enumerate(seq_input):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
+            batch[0][2] = True  # tqdm ON
 
             if multi_proc:
                 with Pool(processes=None) as pool:
@@ -38,7 +40,7 @@ class MatchAV:
 
         return results
 
-    def phase(self, match_info: dict, shape_path: str):
+    def phase(self, match_info: dict, shape_path: str, tqdm_visualize=False):
         # match_datas shape {".csv": path, ".wav": [path1, ...]}
         # shape_result shape [shape_result: ndarray, norm_info, normalizer, fps] -> [0] & [3]
 
@@ -55,7 +57,12 @@ class MatchAV:
             "__able__": data_info["available"],
         }
 
-        for event in event_list:
+        if tqdm_visualize:
+            iterator = tqdm(event_list, desc="  measure mouth ")
+        else:
+            iterator = event_list
+
+        for event in iterator:
             start = int((event["startTime"] - 0.5) * fps)
             end = int((event["endTime"] + 0.5) * fps)
             sp_id = event["speakerID"].split("_")[0]  # part of ICXX
@@ -87,7 +94,7 @@ class MatchAV:
 
         _sq = []
         for s1, s2 in zip(sq1, sq2):
-            _sq.append([s1, s2])
+            _sq.append([s1, s2, False])
 
         return _sq
 

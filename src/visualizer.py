@@ -13,7 +13,6 @@ import numpy as np
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 import moviepy.editor as mpedit
-from pydub import AudioSegment
 
 from src.utils import Video, CalcTools as tools
 

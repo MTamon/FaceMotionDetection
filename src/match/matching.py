@@ -5,6 +5,7 @@ from typing import List
 from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
+import re
 
 from src.utils import batching
 from src.io import load_shaped, load_luu_csv
@@ -44,14 +45,18 @@ class MatchAV:
         # match_datas shape {".csv": path, ".wav": [path1, ...]}
         # shape_result shape [shape_result: ndarray, norm_info, normalizer, fps] -> [0] & [3]
 
-        event_list = load_luu_csv(match_info[".csv"]["path"])
+        csv_path = match_info[".csv"]["path"]
+        csv_path = "/".join(re.split(r"[\\]", csv_path))
+
+        event_list = load_luu_csv(csv_path)
         all_shape_result = load_shaped(shape_path)
-        shape_result = all_shape_result[0]
+
+        shape_result = "/".join(re.split(r"[\\]", all_shape_result[0]))
         fps = all_shape_result[3]
         data_info = all_shape_result[4]
 
         measure_res = {
-            "__name__": match_info[".csv"]["path"],
+            "__name__": csv_path,
             "__pair__": shape_path,
             "__max__": data_info["max_length"],
             "__able__": data_info["available"],

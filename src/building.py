@@ -61,6 +61,7 @@ class CEJC_Builder:
             write_index_file(match_info)
 
             fp = pformat(match_info).split("\n")
+            print("\n".join(fp))
             for _fp in fp:
                 self.logger.info(_fp)
 

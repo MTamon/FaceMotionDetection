@@ -47,11 +47,12 @@ class MatchAV:
 
         csv_path = match_info[".csv"]["path"]
         csv_path = "/".join(re.split(r"[\\]", csv_path))
+        shape_path = "/".join(re.split(r"[\\]", shape_path))
 
         event_list = load_luu_csv(csv_path)
         all_shape_result = load_shaped(shape_path)
 
-        shape_result = "/".join(re.split(r"[\\]", all_shape_result[0]))
+        shape_result = all_shape_result[0]
         fps = all_shape_result[3]
         data_info = all_shape_result[4]
 

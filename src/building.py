@@ -27,18 +27,23 @@ class CEJC_Builder:
         self.threshold_len = args.threshold_len
         self.threshold_use = args.threshold_use
 
-    def __call__(self, shaper_list: list, matchav_list: list):
+    def __call__(
+        self, shaper_list: list, matchav_list: list, multi_proc=True, redo_shape=True
+    ):
         shaper_list = batching(shaper_list, self.batch_size)
         matchav_list = batching(matchav_list, self.batch_size)
 
         merge_res = []
 
         for batch_s, batch_m in zip(shaper_list, matchav_list):
-            shape_r = self.shaper(batch_s)
+            if redo_shape:
+                shape_r = self.shaper(batch_s)
+            else:
+                shape_r = [res[2] for res in batch_s]
 
             # batch_m shape {".csv": path, ".wav": [path1, ...]} * batch_size
             # shape_r shape [shape_result: ndarray, norm_info, normalizer] * batch_size
-            merge_res += self.merger(batch_m, shape_r)
+            merge_res += self.merger(batch_m, shape_r, multi_proc)
 
         self.logger.info("BUILDER >> Analysis process done.")
         self.logger.info("BUILDER >> Start Optimize process.")

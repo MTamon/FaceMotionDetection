@@ -15,7 +15,7 @@ class MatchAV:
         self.batch_size = batch_size
 
     def __call__(
-        self, match_datas: List[dict], shape_result_path: List[str]
+        self, match_datas: List[dict], shape_result_path: List[str], multi_proc=True
     ) -> List[dict]:
         seq_input = self.concatenate_inputs(match_datas, shape_result_path)
         seq_input = batching(seq_input, self.batch_size)
@@ -27,8 +27,12 @@ class MatchAV:
         for idx, batch in enumerate(seq_input):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
 
-            with Pool(processes=None) as pool:
-                results += pool.starmap(self.phase, batch)
+            if multi_proc:
+                with Pool(processes=None) as pool:
+                    results += pool.starmap(self.phase, batch)
+            else:
+                for _ba in batch:
+                    results.append(self.phase(*_ba))
 
         self.logger.info(" >> DONE. << ")
 

@@ -6,6 +6,7 @@ from logging import Logger
 from argparse import Namespace
 from typing import List, Tuple
 from collections import OrderedDict
+from pprint import pformat
 
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
@@ -54,6 +55,10 @@ class CEJC_Builder:
             match_info = self.opt_matching(_group)
             write_index_file(match_info)
 
+            fp = pformat(match_info).split("\n")
+            for _fp in fp:
+                self.logger.info(_fp)
+
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)
         return _path_list
@@ -61,7 +66,7 @@ class CEJC_Builder:
     def opt_matching(self, group: List[dict]) -> List[Tuple[str, str]]:
         # collect speakerID
         info_keys = ("__name__", "__pair__", "__max__", "__able__")
-        ids = [_k for _k in group[0].keys() if not _k in info_keys]
+        ids = [_k for _k in group[0].keys() if not _k in info_keys and _k[:2] == "IC"]
 
         prime_id = OrderedDict()
         for sp_id in ids:
@@ -100,7 +105,8 @@ class CEJC_Builder:
         for idx, sp_id in zip(index_list, prime_id):
             name = prime_id[sp_id][idx]["name"]
             pair = prime_id[sp_id][idx]["pair"]
-            _res = (sp_id, pair, name)
+            scre = prime_id[sp_id][idx]["score"]
+            _res = (sp_id, pair, name, scre)
             res.append(_res)
 
         match_info = self.form_index_file(res)
@@ -118,11 +124,22 @@ class CEJC_Builder:
 
         match_info = {"name": idx_path, "pairs": []}
 
-        for (sp_id, pair, _) in match_res:
+        for (sp_id, pair, _, scr) in match_res:
             wav_path = os.path.join(path, "_".join([dir_name, sp_id + ".wav"]))
             wav_path = "/".join(re.split(r"\\", wav_path))
             if os.path.isfile(wav_path):
-                match_info["pairs"].append((pair, wav_path))
+                match_info["pairs"].append((pair, wav_path, scr))
+
+        prime_pair = {}
+        for info in match_info["pairs"]:
+            if not info[0] in prime_pair:
+                prime_pair[info[0]] = (info[1], info[2])
+            else:
+                if prime_pair[info[0]][1] < info[2]:
+                    prime_pair[info[0]] = (info[1], info[2])
+        match_info["pairs"] = [
+            (pair, wav_path) for pair, (wav_path, _) in prime_pair.items()
+        ]
 
         return match_info
 

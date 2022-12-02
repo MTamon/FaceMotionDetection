@@ -201,6 +201,13 @@ def add_build_args(parser: ArgumentParser):
     )
 
     parser.add_argument(
+        "--visualize-front",
+        default=False,
+        action="store_true",
+        help="Visualization options for the results of normalized process. When use this option, processing speed is made be lower. Defaults to False.",
+    )
+
+    parser.add_argument(
         "--order",
         default=7,
         type=int,

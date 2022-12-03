@@ -181,23 +181,24 @@ class CEJC_Builder:
         idx_path = os.path.join(path, "_".join([dir_name, _index_file_name]))
         idx_path = "/".join(re.split(r"\\", idx_path))
 
-        match_info = {"name": idx_path, "pairs": []}
+        match_info = {"name": idx_path, "csv": match_res[0][2], "pairs": []}
 
         for (sp_id, pair, _, scr) in match_res:
             wav_path = os.path.join(path, "_".join([dir_name, sp_id + ".wav"]))
             wav_path = "/".join(re.split(r"\\", wav_path))
             if os.path.isfile(wav_path):
-                match_info["pairs"].append((pair, wav_path, scr))
+                match_info["pairs"].append((pair, wav_path, scr, sp_id))
 
         prime_pair = {}
         for info in match_info["pairs"]:
             if not info[0] in prime_pair:
-                prime_pair[info[0]] = (info[1], info[2])
+                prime_pair[info[0]] = (info[1], info[3])
             else:
                 if prime_pair[info[0]][1] < info[2]:
-                    prime_pair[info[0]] = (info[1], info[2])
+                    prime_pair[info[0]] = (info[1], info[3])
         match_info["pairs"] = [
-            (pair, wav_path) for pair, (wav_path, _) in prime_pair.items()
+            {"sh": pair, "wav": wav_path, "spID": sp_id}
+            for pair, (wav_path, sp_id) in prime_pair.items()
         ]
 
         return match_info

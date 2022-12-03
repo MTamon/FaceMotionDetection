@@ -537,7 +537,9 @@ class Visualizer:
 
     @staticmethod
     def audio_visual_matching(logger: Logger, match_info: dict):
-        for (sh_path, wav_path) in match_info["pairs"]:
+        for record in match_info["pairs"]:
+            sh_path = record["sh"]
+            wav_path = record["wav"]
             mp4_ALL_path = sh_path[:-3] + "ALL.mp4"
             if not os.path.isfile(mp4_ALL_path):
                 logger.warn(f"No such a mp4 file: {mp4_ALL_path}")

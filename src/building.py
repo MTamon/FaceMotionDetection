@@ -160,7 +160,7 @@ class CEJC_Builder:
                 else:
                     prime_pair[pp_key] = [record]
         for _k in prime_pair:
-            pair_sum = 0.0
+            pair_sum = 1e-4
             for record in prime_pair[_k]:
                 pair_sum += record["score"]
             for record in prime_pair[_k]:

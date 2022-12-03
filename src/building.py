@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
 from .utils import shape_from_extractor_args, batching
-from .io import write_index_file, load_index_files
+from .io import write_index_file, load_index_file
 from .visualizer import Visualizer
 
 
@@ -77,7 +77,7 @@ class CEJC_Builder:
 
         # display result
         for save_path in results:
-            match_info = load_index_files(save_path)
+            match_info = load_index_file(save_path)
 
             fp = pformat(match_info).split("\n")
             print("\n".join(fp))

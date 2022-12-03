@@ -167,17 +167,21 @@ def write_index_file(match_info: dict):
     return path
 
 
-def load_index_files(dir_path) -> List[dict]:
+def load_index_file(path) -> dict:
+    with open(path, "rb") as f:
+        match_info = pickle.load(f)
+    return match_info
+
+
+def get_index_file_paths(dir_path) -> List[str]:
     members = os.listdir(dir_path)
-    match_infos = []
+    path_list = []
     for _mem in members:
         if ".avidx" in _mem:
             if _mem[-6:] == ".avidx":
-                with open(_mem, "rb") as f:
-                    match_info = pickle.load(f)
-                    match_infos.append(match_info)
+                path_list.append(_mem)
 
-    return match_infos
+    return path_list
 
 
 def write_measure_mouth(path, measure_res):

@@ -239,24 +239,21 @@ class HeadPoseEstimation:
         Args:
             step (int): frame step
             img_size (Iterable[int]): frame resolution. (width x height)
-            area_info (dict): This dict has 'xmin', 'ymin', 'width', 'height', 'birthtime'.
+            area_info (dict): This dict has 'xmin', 'ymin', 'width', 'height'.
             origin (Iterable): This iter has two elements (x, y) that face nose position.
             angle (Iterable): This is 3x3 rotation matrix.
             landmarks (Iterable): This iter has face-mesh landmarks [(x, y, z), ...].
 
         Returns:
-            dict: {'area': area_info, 'origin': origin, 'angles': angle, 'landmarks': landmarks, 'activation': }
+            dict: {'area': area_info, 'origin': origin, 'angles': angle, 'landmarks': landmarks}
         """
         area = {}
         area["xmin"] = area_info["xmin"]
         area["ymin"] = area_info["ymin"]
         area["width"] = area_info["width"]
         area["height"] = area_info["height"]
-        area["birthtime"] = area_info["birthtime"]
 
         resolution = (img_size[0], img_size[1])
-
-        activation = step >= area["birthtime"]
 
         return {
             "step": step,
@@ -265,7 +262,6 @@ class HeadPoseEstimation:
             "origin": origin,
             "angles": angle,
             "landmarks": landmarks,
-            "activation": activation,
         }
 
     def trim_area(self, frame: np.ndarray, area: dict) -> Iterable[int]:
@@ -315,9 +311,6 @@ class HeadPoseEstimation:
 
         img_h, img_w, _ = frame.shape
         resolution = (img_w, img_h)
-
-        if step < area["birthtime"]:
-            return [self.create_dict(step, resolution, area, None, None, None)]
 
         # Flip the image horizontally for a later selfie-view display
         # Also convert the color space from BGR to RGB

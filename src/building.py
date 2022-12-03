@@ -64,7 +64,7 @@ class CEJC_Builder:
 
         phase_args = []
         for csv_path in prime_csv:
-            phase_args.append((csv_path, prime_csv, False))
+            phase_args.append([csv_path, prime_csv, False])
         phase_args = batching(phase_args, self.batch_size)
 
         for batch in phase_args:

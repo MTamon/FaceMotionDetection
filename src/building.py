@@ -48,6 +48,13 @@ class CEJC_Builder:
             # shape_r shape [shape_result: ndarray, norm_info, normalizer] * batch_size
             merge_res += self.merger(batch_m, shape_r)
 
+        _merge_res = []
+        for record in merge_res:
+            # Rejected data
+            if record["__max__"] is not None:
+                _merge_res.append(record)
+        merge_res = _merge_res
+
         self.logger.info("BUILDER >> Analysis process done.")
         self.logger.info("BUILDER >> Start Optimize process.")
 

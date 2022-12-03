@@ -80,6 +80,15 @@ class MatchAV:
         csv_path = "/".join(re.split(r"[\\]", csv_path))
         shape_path = "/".join(re.split(r"[\\]", shape_path))
 
+        if not os.path.isfile(shape_path):
+            measure_res = {
+                "__name__": csv_path,
+                "__pair__": shape_path,
+                "__max__": None,
+                "__able__": None,
+            }
+            return ({"__name__": csv_path, "__pair__": shape_path}, shape_path)
+
         event_list = load_luu_csv(csv_path)
         all_shape_result = load_shaped(shape_path)
 
@@ -160,7 +169,10 @@ class MatchAV:
         _results = []
         for _path in input_path:
             for result in results:
-                if _path == result[1]:
+                if result == {}:
+                    continue
+                ks = [k for k in result.keys() if "IC" in k]
+                if _path == result[ks[0]]["sh_path"]:
                     _results.append(result[0])
                     break
         return _results

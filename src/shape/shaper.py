@@ -58,6 +58,8 @@ class Shaper:
         self.resolution_std = (1280, 720)
         self.fps_std = 29.97
 
+        self.threshold_second = 5.0
+
         self.threshold_size = 0.02
         self.threshold_rotate = 2.5
         self.threshold_pos = 0.045
@@ -186,9 +188,14 @@ class Shaper:
         hme_result = load_head_pose(input_path)
         hme_result = self.to_numpy_landmark(hme_result, resolution, tqdm_visual)
 
-        init_result, cent_max, cent_min = self.init_analysis(
+        init_result, cent_max, cent_min, stop = self.init_analysis(
             hme_result, tqdm_visual, fps
         )
+
+        if stop:
+            self.logger.info("! Reject data due to lack of available data.")
+            return output_path
+
         cent_rough = tools.centroid_roughness(cent_max, cent_min, self.division)
         norm_info = self.estimate_front(init_result, cent_rough, tqdm_visual)
         init_result, normalizer = self.normalized_data(init_result, *norm_info)
@@ -292,6 +299,8 @@ class Shaper:
 
         cent_max = np.zeros(3)
         cent_min = np.full(3, 1e5)
+        max_len = 0
+        _max_len = 0
 
         results = []
 
@@ -313,6 +322,7 @@ class Shaper:
             if facemesh is None:
                 results.append(result_dict)
                 mean_buf[step % self.mean_term] = None
+                _max_len = 0
                 continue
 
             mean_buf[step % self.mean_term] = facemesh
@@ -339,10 +349,16 @@ class Shaper:
 
             results.append(result_dict)
 
+            _max_len += 1
+            if _max_len > max_len:
+                max_len = _max_len
+
         results = np.array(results)
         self.clearn_z(results)
 
-        return (results, cent_max, cent_min)
+        stop = max_len < int(self.threshold_second * fps)
+
+        return (results, cent_max, cent_min, stop)
 
     def clearn_z(self, results: ndarray):
         results = np.array(results)

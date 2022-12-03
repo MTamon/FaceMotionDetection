@@ -10,7 +10,7 @@ import os
 
 from src.utils import batching, remove_list_duplication
 from src.utils import CalcTools as tools
-from src.io import load_shaped, load_luu_csv, load_measure_mouth, write_measure_mouth
+from src.io import load_shaped, load_luu_csv, write_measure_mouth
 
 
 class MatchAV:
@@ -78,15 +78,9 @@ class MatchAV:
         shape_path = "/".join(re.split(r"[\\]", shape_path))
 
         if os.path.isfile(save_path) and not self.redo:
-            return (load_measure_mouth(save_path), shape_path)
+            return (save_path, shape_path)
         if not os.path.isfile(shape_path):
-            measure_res = {
-                "__name__": csv_path,
-                "__pair__": shape_path,
-                "__max__": None,
-                "__able__": None,
-            }
-            return ({"__name__": csv_path, "__pair__": shape_path}, shape_path)
+            return (None, shape_path)
 
         event_list = load_luu_csv(csv_path)
         all_shape_result = load_shaped(shape_path)
@@ -131,7 +125,7 @@ class MatchAV:
 
         write_measure_mouth(save_path, measure_res)
 
-        return (measure_res, shape_path)
+        return (save_path, shape_path)
 
     def concatenate_inputs(self, sq1, sq2) -> list:
         if len(sq1) != len(sq2):

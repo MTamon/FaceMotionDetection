@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from mediapipe.python.solutions.face_mesh import FaceMesh
 from src.io import write_head_pose
-from src.utils import Video
+from src.utils import Video, batching
 from src.visualizer import Visualizer
 from tqdm import tqdm
 
@@ -22,6 +22,7 @@ class HeadPoseEstimation:
         min_detection_confidence=0.7,
         min_tracking_confidence=0.5,
         max_num_face=1,
+        batch_size=5,
         visualize=False,
         result_length=100000,
     ) -> None:
@@ -36,6 +37,8 @@ class HeadPoseEstimation:
                 https://solutions.mediapipe.dev/face_mesh#min_tracking_confidence.
             max_num_faces: Maximum number of faces to detect. See details in
                 https://solutions.mediapipe.dev/face_mesh#max_num_faces.
+            batch_size (int, optional):
+                Batch size.
             visualize (bool, optional):
                 visualize result as video. Defaults to False.
             result_length (int, optional):
@@ -46,6 +49,7 @@ class HeadPoseEstimation:
         self.min_detection_confidence = min_detection_confidence
         self.min_tracking_confidence = min_tracking_confidence
         self.max_num_face = max_num_face
+        self.batch_size = batch_size
         self.visualize = visualize
         self.result_length = result_length
 
@@ -68,7 +72,7 @@ class HeadPoseEstimation:
         """
 
         results = []
-        all_process = len(all_phase_args)
+        all_args = []
 
         for idx, phase_args in enumerate(all_phase_args):
             video_path = phase_args[0]
@@ -76,44 +80,55 @@ class HeadPoseEstimation:
             phase_area = phase_args[2]
             visualize_path = None
 
-            self.logger.info(
-                f"Progress: {(idx+1)}/{all_process} ... {os.path.basename(phase_args[0])}"
-            )
-
             if self.visualize:
                 if len(phase_args) < 4:
                     ValueError("visualize-mode needs visualize-path")
                 visualize_path = phase_args[3]
 
-            hp_phase_paths = self.phase(
-                video_path, hp_file_path, phase_area, visualize_path
-            )
+            for i, area in enumerate(phase_area):
+                queue_output = Queue()
+                all_args.append(
+                    [
+                        queue_output,
+                        video_path,
+                        area,
+                        i,
+                        hp_file_path,
+                        visualize_path,
+                        False,
+                    ]
+                )
 
-            results.append(hp_phase_paths)
+        all_args = batching(all_args, self.batch_size)
+        for idx, batch in enumerate(all_args):
+            self.logger.info(f"Progress: {(idx+1)}/{len(all_args)}")
+            batch[0][-1] = True  # tqdm visualize
+            results.append(self.phase(batch))
 
         return results
 
-    def phase(
-        self, input_v: str, hp_path: str, areas: List[dict], output: str = None
-    ) -> List[str]:
+    def phase(self, arg_set_list) -> List[str]:
 
         procs_set = []
-        arg_set = []
 
-        self.logger.info(Video(input_v, "mp4v"))
+        # display video info
+        video_list = []
+        for arg_set in arg_set_list:
+            if not arg_set[1] in video_list:
+                video_list.append(arg_set[1])
+        for input_v in video_list:
+            self.logger.info(Video(input_v, "mp4v"))
 
         # generate process
-        for i, area in enumerate(areas):
-            queue_output = Queue()
-            arg_set.append((queue_output, input_v, area, i, hp_path, output, i == 0))
-            procs_set.append(Process(target=self.apply_face_mesh, args=(arg_set[i])))
+        for i, arg_set in enumerate(arg_set_list):
+            procs_set.append(Process(target=self.apply_face_mesh, args=(arg_set)))
             self.logger.info(f"process:{i+1} go.")
             procs_set[i].start()
 
         hp_paths = []
 
-        for i in range(len(areas)):
-            q_out = arg_set[i][0]
+        for i in range(len(arg_set_list)):
+            q_out = arg_set_list[i][0]
             hp_paths.append(q_out.get())
             procs_set[i].join()
             self.logger.info(f"process:{i+1} done.")

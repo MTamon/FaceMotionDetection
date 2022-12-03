@@ -185,9 +185,10 @@ def get_index_file_paths(dir_path) -> List[str]:
     return path_list
 
 
-def write_measure_mouth(path, measure_res):
+def write_measure_mouth(path, measure_res) -> str:
     with open(path, "wb") as f:
         pickle.dump(measure_res, f)
+    return path
 
 
 def load_measure_mouth(path):

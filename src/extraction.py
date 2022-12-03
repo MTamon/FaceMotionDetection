@@ -44,9 +44,8 @@ class Extraction:
         hpe_result = self.hpe(input_hpe)
 
         # display hpe reslt files
-        for results in hpe_result:
-            for result in results:
-                self.logger.info(f"saved file {result}")
+        for result in hpe_result:
+            self.logger.info(f"saved file {result}")
 
         return hpe_result
 
@@ -162,5 +161,6 @@ class Extraction:
         hpe_args["max_num_face"] = args.max_num_face
         hpe_args["visualize"] = args.visualize
         hpe_args["result_length"] = args.result_length
+        hpe_args["batch_size"] = args.process_num
 
         return hpe_args

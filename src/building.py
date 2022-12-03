@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
 from .utils import shape_from_extractor_args, batching
-from .io import write_index_file, load_index_file
+from .io import write_index_file, load_index_file, load_measure_mouth
 from .visualizer import Visualizer
 
 
@@ -49,10 +49,10 @@ class CEJC_Builder:
             merge_res += self.merger(batch_m, shape_r)
 
         _merge_res = []
-        for record in merge_res:
+        for path in merge_res:
             # Rejected data
-            if record["__max__"] is not None:
-                _merge_res.append(record)
+            if path is not None:
+                _merge_res.append(load_measure_mouth(path))
         merge_res = _merge_res
 
         self.logger.info("BUILDER >> Analysis process done.")

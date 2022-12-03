@@ -34,72 +34,72 @@ def process(logger: Logger, paths):
 if __name__ == "__main__":
     log = set_logger("TEST-HPE", "log/test/test-hpe.log")
     path_list = [
-        # (
-        #     "./data/test/webcame.mp4",
-        #     "test/face_mesh/out/webcame.hp",
-        #     load_face_area("test/trim/out/result/webcame.area"),
-        #     "test/face_mesh/out/webcame.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame2.mp4",
-        #     "test/face_mesh/out/webcame2.hp",
-        #     load_face_area("test/trim/out/result/webcame2.area"),
-        #     "test/face_mesh/out/webcame2.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame3.mp4",
-        #     "test/face_mesh/out/webcame3.hp",
-        #     load_face_area("test/trim/out/result/webcame3.area"),
-        #     "test/face_mesh/out/webcame3.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame4.mp4",
-        #     "test/face_mesh/out/webcame4.hp",
-        #     load_face_area("test/trim/out/result/webcame4.area"),
-        #     "test/face_mesh/out/webcame4.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame5.mp4",
-        #     "test/face_mesh/out/webcame5.hp",
-        #     load_face_area("test/trim/out/result/webcame5.area"),
-        #     "test/face_mesh/out/webcame5.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame6.mp4",
-        #     "test/face_mesh/out/webcame6.hp",
-        #     load_face_area("test/trim/out/result/webcame6.area"),
-        #     "test/face_mesh/out/webcame6.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame7.mp4",
-        #     "test/face_mesh/out/webcame7.hp",
-        #     load_face_area("test/trim/out/result/webcame7.area"),
-        #     "test/face_mesh/out/webcame7.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame8.mp4",
-        #     "test/face_mesh/out/webcame8.hp",
-        #     load_face_area("test/trim/out/result/webcame8.area"),
-        #     "test/face_mesh/out/webcame8.mp4",
-        # ),
-        # (
-        #     "./data/test/webcame9.mp4",
-        #     "test/face_mesh/out/webcame9.hp",
-        #     load_face_area("test/trim/out/result/webcame9.area"),
-        #     "test/face_mesh/out/webcame9.mp4",
-        # ),
-        # (
-        #     "./data/test/short1.mp4",
-        #     "test/face_mesh/out/short1.hp",
-        #     load_face_area("test/trim/out/result/short1.area"),
-        #     "test/face_mesh/out/short1.mp4",
-        # ),
-        # (
-        #     "./data/test/short2.mp4",
-        #     "test/face_mesh/out/short2.hp",
-        #     load_face_area("test/trim/out/result/short2.area"),
-        #     "test/face_mesh/out/short2.mp4",
-        # ),
+        (
+            "./data/test/webcame.mp4",
+            "test/face_mesh/out/webcame.hp",
+            load_face_area("test/trim/out/result/webcame.area"),
+            "test/face_mesh/out/webcame.mp4",
+        ),
+        (
+            "./data/test/webcame2.mp4",
+            "test/face_mesh/out/webcame2.hp",
+            load_face_area("test/trim/out/result/webcame2.area"),
+            "test/face_mesh/out/webcame2.mp4",
+        ),
+        (
+            "./data/test/webcame3.mp4",
+            "test/face_mesh/out/webcame3.hp",
+            load_face_area("test/trim/out/result/webcame3.area"),
+            "test/face_mesh/out/webcame3.mp4",
+        ),
+        (
+            "./data/test/webcame4.mp4",
+            "test/face_mesh/out/webcame4.hp",
+            load_face_area("test/trim/out/result/webcame4.area"),
+            "test/face_mesh/out/webcame4.mp4",
+        ),
+        (
+            "./data/test/webcame5.mp4",
+            "test/face_mesh/out/webcame5.hp",
+            load_face_area("test/trim/out/result/webcame5.area"),
+            "test/face_mesh/out/webcame5.mp4",
+        ),
+        (
+            "./data/test/webcame6.mp4",
+            "test/face_mesh/out/webcame6.hp",
+            load_face_area("test/trim/out/result/webcame6.area"),
+            "test/face_mesh/out/webcame6.mp4",
+        ),
+        (
+            "./data/test/webcame7.mp4",
+            "test/face_mesh/out/webcame7.hp",
+            load_face_area("test/trim/out/result/webcame7.area"),
+            "test/face_mesh/out/webcame7.mp4",
+        ),
+        (
+            "./data/test/webcame8.mp4",
+            "test/face_mesh/out/webcame8.hp",
+            load_face_area("test/trim/out/result/webcame8.area"),
+            "test/face_mesh/out/webcame8.mp4",
+        ),
+        (
+            "./data/test/webcame9.mp4",
+            "test/face_mesh/out/webcame9.hp",
+            load_face_area("test/trim/out/result/webcame9.area"),
+            "test/face_mesh/out/webcame9.mp4",
+        ),
+        (
+            "./data/test/short1.mp4",
+            "test/face_mesh/out/short1.hp",
+            load_face_area("test/trim/out/result/short1.area"),
+            "test/face_mesh/out/short1.mp4",
+        ),
+        (
+            "./data/test/short2.mp4",
+            "test/face_mesh/out/short2.hp",
+            load_face_area("test/trim/out/result/short2.area"),
+            "test/face_mesh/out/short2.mp4",
+        ),
         # (
         #     "./data/test/midol1s.mp4",
         #     "test/face_mesh/out/midol1s.hp",
@@ -196,17 +196,17 @@ if __name__ == "__main__":
         #     load_face_area("test/trim/out/result/test15.area"),
         #     "test/face_mesh/out/test15.mp4",
         # ),
-        (
-            "./data/test/test16.mp4",
-            "test/face_mesh/out/test16.hp",
-            load_face_area("test/trim/out/result/test16.area"),
-            "test/face_mesh/out/test16.mp4",
-        ),
-        (
-            "./data/test/test17.mp4",
-            "test/face_mesh/out/test17.hp",
-            load_face_area("test/trim/out/result/test17.area"),
-            "test/face_mesh/out/test17.mp4",
-        ),
+        # (
+        #     "./data/test/test16.mp4",
+        #     "test/face_mesh/out/test16.hp",
+        #     load_face_area("test/trim/out/result/test16.area"),
+        #     "test/face_mesh/out/test16.mp4",
+        # ),
+        # (
+        #     "./data/test/test17.mp4",
+        #     "test/face_mesh/out/test17.hp",
+        #     load_face_area("test/trim/out/result/test17.area"),
+        #     "test/face_mesh/out/test17.mp4",
+        # ),
     ]
     process(log, path_list)

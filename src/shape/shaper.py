@@ -2,6 +2,7 @@
 
 from logging import Logger
 import os
+import re
 import shutil
 from tqdm import tqdm
 from typing import Dict, Iterable, List, Tuple
@@ -1296,7 +1297,9 @@ class Shaper:
         for _path in input_path:
             for result in results:
                 if _path[2] == result:
-                    _results.append(result)
+                    _result = re.split(r"[\\]", result)
+                    _result = "/".join(_result)
+                    _results.append(_result)
                     break
         return _results
 

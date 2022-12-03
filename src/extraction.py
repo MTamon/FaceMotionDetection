@@ -65,7 +65,7 @@ class Extraction:
                     ValueError(f"each phase args are expected 5, but got {len(paths)}")
                 output = path_set[3]
 
-            input_set = (path_set[0], output)
+            input_set = (path_set[0], output, path_set[2])
             input_trim.append(input_set)
             indx.append(i)
 

@@ -1,25 +1,42 @@
 """This program is for much audio-visual data"""
+from mediapipe.python.solutions.face_mesh_connections import FACEMESH_LIPS
 
 from logging import Logger
 from typing import List
 from multiprocessing import Pool
 from tqdm import tqdm
-import numpy as np
 import re
 import os
 
-from src.utils import batching
+from src.utils import batching, remove_list_duplication
+from src.utils import CalcTools as tools
 from src.io import load_shaped, load_luu_csv, load_measure_mouth, write_measure_mouth
 
 
 class MatchAV:
     def __init__(
-        self, logger: Logger, batch_size: int = 5, redo=False, single_proc=False
+        self,
+        logger: Logger,
+        batch_size: int = 5,
+        method: str = "vertical",
+        redo=False,
+        single_proc=False,
     ):
         self.logger = logger
         self.batch_size = batch_size
         self.redo = redo
         self.single_proc = single_proc
+
+        self.lips = remove_list_duplication(list(FACEMESH_LIPS))
+
+        if method == "vertical":
+            self.method = tools.vertical
+        elif method == "aspect":
+            self.method = tools.aspect
+        elif method == "distortion":
+            self.method = tools.distortion
+        else:
+            raise ValueError("'method' args is invalid value")
 
     def __call__(
         self, match_datas: List[dict], shape_result_path: List[str]
@@ -127,22 +144,9 @@ class MatchAV:
                 prevs = None
                 continue
 
-            # v_pts = np.concatenate((face[0].reshape(1, -1), face[11:18]))
-            # _v_pts = np.concatenate((face[11:18], face[0].reshape(1, -1)))
-            # pts_len = np.linalg.norm(v_pts - _v_pts, axis=-1)
+            _vol, prevs = self.method(prevs, face, self.lips)
 
-            # 308, 78, 14, 13 -> mouth point
-            vertical, horizontal = (face[13] - face[14]), (face[308] - face[78])
-            aspect = np.linalg.norm(horizontal) / np.linalg.norm(vertical)
-            aspect = abs(aspect)
-
-            if prevs is None:
-                # prevs = pts_len
-                prevs = aspect
-                continue
-
-            # volatility += np.sum(abs(pts_len - prevs))
-            volatility += np.sum(abs(aspect - prevs))
+            volatility += _vol
             dt_len += 1
 
         return (volatility, dt_len)

@@ -289,6 +289,7 @@ class CEJC_Builder:
         match_args = {}
         match_args["logger"] = logger
         match_args["batch_size"] = args.batch_size
+        match_args["method"] = args.measure_method
         match_args["redo"] = args.redo_matching
         match_args["single_proc"] = args.single_proc_matching
 

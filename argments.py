@@ -229,6 +229,13 @@ def add_build_args(parser: ArgumentParser):
     )
 
     parser.add_argument(
+        "--measure-method",
+        default="vertical",
+        type=str,
+        help="Method for measuring mouth movemnts. Defaults to 'vertical'.",
+    )
+
+    parser.add_argument(
         "--redo-shaper",
         default=False,
         action="store_true",

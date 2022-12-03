@@ -437,6 +437,56 @@ class CalcTools:
 
         return np.array(max_value), max_score
 
+    @staticmethod
+    def vertical(prevs, face: np.ndarray, **_):
+        v_pts = np.concatenate((face[0].reshape(1, -1), face[11:18]))
+        _v_pts = np.concatenate((face[11:18], face[0].reshape(1, -1)))
+        pts_len = np.linalg.norm(v_pts - _v_pts, axis=-1)
+
+        if prevs is None:
+            prevs = pts_len
+
+            return (0.0, prevs)
+
+        volatility = np.sum(abs(pts_len - prevs))
+        prevs = pts_len
+
+        return (volatility, prevs)
+
+    @staticmethod
+    def aspect(prevs, face: np.ndarray, **_):
+        # 308, 78, 14, 13 -> mouth point
+        vertical, horizontal = (face[13] - face[14]), (face[308] - face[78])
+        aspect = np.linalg.norm(horizontal) / np.linalg.norm(vertical)
+        aspect = abs(aspect)
+
+        if prevs is None:
+            prevs = aspect
+
+            return (0.0, prevs)
+
+        volatility = np.sum(abs(aspect - prevs))
+        prevs = aspect
+
+        return (volatility, prevs)
+
+    @staticmethod
+    def distortion(prevs, face: np.ndarray, **options):
+        if not "parts" in options.keys():
+            raise KeyError("Argment 'parts' is not found")
+        parts = face[options["parts"]]
+
+        if prevs is None:
+            prevs = parts
+            return (0.0, prevs)
+
+        dif = parts - prevs
+        dif = dif - np.mean(dif, axis=0)
+        volatility = np.sum(np.linalg.norm(dif, axis=-1))
+        prevs = parts
+
+        return (volatility, prevs)
+
 
 def batching(data_list: list, batch_size: int) -> list:
     batches = [[]]
@@ -527,3 +577,16 @@ def get_same_files(path) -> List[str]:
             same_list.append("/".join(re.split(r"[\\]", _path)))
 
     return exist_flg, same_list
+
+
+def remove_list_duplication(target):
+    target = np.array(target)
+    target = target.flatten()
+
+    es = []
+    for e in target:
+        if e in es:
+            continue
+        es.append(e)
+
+    return es

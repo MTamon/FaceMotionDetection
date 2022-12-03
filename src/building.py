@@ -174,7 +174,7 @@ class CEJC_Builder:
 
         path = os.path.dirname(match_res[0][2])
 
-        idx_path = os.path.join(path, "_".join([dir_name, _index_file_name]))
+        idx_path = os.path.join(path, _index_file_name)
         idx_path = "/".join(re.split(r"\\", idx_path))
 
         match_info = {"name": idx_path, "csv": match_res[0][2], "pairs": []}

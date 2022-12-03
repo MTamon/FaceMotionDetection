@@ -193,10 +193,20 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test14.mp4",
         #     "test/trim/out/result/test14.area",
         # ),
+        # (
+        #     "./data/test/test15.mp4",
+        #     "test/trim/out/result/test15.mp4",
+        #     "test/trim/out/result/test15.area",
+        # ),
         (
-            "./data/test/test15.mp4",
-            "test/trim/out/result/test15.mp4",
-            "test/trim/out/result/test15.area",
+            "./data/test/test16.mp4",
+            "test/trim/out/result/test16.mp4",
+            "test/trim/out/result/test16.area",
+        ),
+        (
+            "./data/test/test17.mp4",
+            "test/trim/out/result/test17.mp4",
+            "test/trim/out/result/test17.area",
         ),
     ]
     process(log, paths_input)

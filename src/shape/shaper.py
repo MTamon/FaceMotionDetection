@@ -117,6 +117,8 @@ class Shaper:
                     _ba[3] = True
                     results.append(self.phase(*_ba))
 
+        results = self.match_sh_order(paths, results)
+
         return results
 
     def batching(self, paths) -> list:
@@ -1261,6 +1263,15 @@ class Shaper:
                 out_video_path,
                 tqdm_visual,
             )
+
+    def match_sh_order(self, input_path, results):
+        _results = []
+        for _path in input_path:
+            for result in results:
+                if _path[2] == result:
+                    _results.append(result)
+                    break
+        return _results
 
     def warnings(self):
         if self.interp_margin > self.consective_scs:

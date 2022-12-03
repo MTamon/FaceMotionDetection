@@ -71,7 +71,7 @@ def add_fm_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--threshold",
-        default=0.3,
+        default=0.1,
         type=float,
         help="Exclude clippings with low detection rates. Defaults to 0.3.",
     )

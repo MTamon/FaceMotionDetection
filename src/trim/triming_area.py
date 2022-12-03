@@ -29,7 +29,7 @@ class TrimFace:
         size_volatility=0.03,
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
-        threshold=0.3,
+        threshold=0.1,
         overlap=0.9,
         integrate_step=1,
         integrate_volatility=0.4,
@@ -188,6 +188,8 @@ class TrimFace:
                 cur_idx += 1
             self.logger.info("")
 
+        results = self.match_mp4_area(paths, results)
+
         return results
 
     def triming_face(
@@ -286,8 +288,10 @@ class TrimFace:
         # remove under success rate
         compatible_area = []
         for area in face_area:
-            if area["success"] / video.cap_frames > self.threshold:
+            suc_rate = area["success"] / video.cap_frames
+            if suc_rate > self.threshold and suc_rate > 300:
                 area["comp"] = True
+                area["path"] = v_path
                 compatible_area.append(area)
             else:
                 area["comp"] = False
@@ -731,3 +735,15 @@ class TrimFace:
             l.append(cell)
 
         return l
+
+    def match_mp4_area(self, mp4_path, areas):
+        _areas = []
+        for _path in mp4_path:
+            _areas.append([])
+            for group in areas:
+                if group == []:
+                    continue
+                if _path == group[0]["path"]:
+                    _areas[-1] = group
+                    break
+        return _areas

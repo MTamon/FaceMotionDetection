@@ -190,11 +190,23 @@ if __name__ == "__main__":
         #     load_face_area("test/trim/out/result/test14.area"),
         #     "test/face_mesh/out/test14.mp4",
         # ),
+        # (
+        #     "./data/test/test15.mp4",
+        #     "test/face_mesh/out/test15.hp",
+        #     load_face_area("test/trim/out/result/test15.area"),
+        #     "test/face_mesh/out/test15.mp4",
+        # ),
         (
-            "./data/test/test15.mp4",
-            "test/face_mesh/out/test15.hp",
-            load_face_area("test/trim/out/result/test15.area"),
-            "test/face_mesh/out/test15.mp4",
+            "./data/test/test16.mp4",
+            "test/face_mesh/out/test16.hp",
+            load_face_area("test/trim/out/result/test16.area"),
+            "test/face_mesh/out/test16.mp4",
+        ),
+        (
+            "./data/test/test17.mp4",
+            "test/face_mesh/out/test17.hp",
+            load_face_area("test/trim/out/result/test17.area"),
+            "test/face_mesh/out/test17.mp4",
         ),
     ]
     process(log, path_list)

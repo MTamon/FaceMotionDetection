@@ -64,6 +64,8 @@ class MatchAV:
 
         self.logger.info(" >> DONE. << ")
 
+        results = self.match_sh_order(shape_result_path, results)
+
         return results
 
     def phase(self, match_info: dict, shape_path: str, tqdm_visualize=False):
@@ -110,6 +112,7 @@ class MatchAV:
                     "volatility": 0.0,
                     "data_num": 0,
                     "all_data": 0,
+                    "sh_path": shape_path,
                 }
 
             target = shape_result[start : end + 1]
@@ -120,7 +123,7 @@ class MatchAV:
 
         write_measure_mouth(save_path, measure_res)
 
-        return measure_res
+        return (measure_res, shape_path)
 
     def concatenate_inputs(self, sq1, sq2) -> list:
         if len(sq1) != len(sq2):
@@ -152,3 +155,12 @@ class MatchAV:
             dt_len += 1
 
         return (volatility, dt_len)
+
+    def match_sh_order(self, input_path, results):
+        _results = []
+        for _path in input_path:
+            for result in results:
+                if _path == result[1]:
+                    _results.append(result[0])
+                    break
+        return _results

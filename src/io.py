@@ -164,6 +164,7 @@ def write_index_file(match_info: dict):
     path = match_info["name"]
     with open(path, "wb") as f:
         pickle.dump(match_info, f)
+    return path
 
 
 def load_index_files(dir_path) -> List[dict]:

@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
 from .utils import shape_from_extractor_args, batching
-from .io import write_index_file
+from .io import write_index_file, load_index_files
 from .visualizer import Visualizer
 
 
@@ -63,28 +63,36 @@ class CEJC_Builder:
             phase_args.append([csv_path, prime_csv, False])
         phase_args = batching(phase_args, self.batch_size)
 
+        results = []
+
         for batch in phase_args:
             if not self.single_proc:
                 batch[0][2] = True
                 with Pool(processes=None) as pool:
-                    pool.starmap(self.phase, batch)
+                    results += pool.starmap(self.phase, batch)
             else:
                 for _ba in batch:
                     _ba[2] = True
-                    self.phase(*_ba)
+                    results.append(self.phase(*_ba))
+
+        # display result
+        for save_path in results:
+            match_info = load_index_files(save_path)
+
+            fp = pformat(match_info).split("\n")
+            print("\n".join(fp))
+            for _fp in fp:
+                self.logger.info(_fp)
 
     def phase(self, csv_path, prime_csv, tqdm_visual=False):
         _group = prime_csv[csv_path]
         match_info = self.opt_matching(_group, tqdm_visual)
-        write_index_file(match_info)
-
-        fp = pformat(match_info).split("\n")
-        print("\n".join(fp))
-        for _fp in fp:
-            self.logger.info(_fp)
+        save_path = write_index_file(match_info)
 
         if self.visualize_match:
             Visualizer.audio_visual_matching(self.logger, match_info)
+
+        return save_path
 
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)

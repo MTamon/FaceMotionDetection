@@ -7,6 +7,8 @@ from argparse import Namespace
 from typing import List, Tuple
 from collections import OrderedDict
 from pprint import pformat
+from multiprocessing import Pool
+from tqdm import tqdm
 
 from .shape.shaper import Shaper
 from .match.matching import MatchAV
@@ -60,30 +62,47 @@ class CEJC_Builder:
 
             prime_csv[record["__name__"]].append(record)
 
+        phase_args = []
         for csv_path in prime_csv:
-            _group = prime_csv[csv_path]
-            match_info = self.opt_matching(_group)
-            write_index_file(match_info)
+            phase_args.append((csv_path, prime_csv, False))
+        phase_args = batching(phase_args, self.batch_size)
 
-            fp = pformat(match_info).split("\n")
-            print("\n".join(fp))
-            for _fp in fp:
-                self.logger.info(_fp)
+        for batch in phase_args:
+            batch[0][2] = True
+            with Pool(processes=None) as pool:
+                pool.starmap(self.phase, batch)
 
-            if self.visualize_match:
-                Visualizer.audio_visual_matching(self.logger, match_info)
+    def phase(self, csv_path, prime_csv, tqdm_visual=False):
+        _group = prime_csv[csv_path]
+        match_info = self.opt_matching(_group, tqdm_visual)
+        write_index_file(match_info)
+
+        fp = pformat(match_info).split("\n")
+        print("\n".join(fp))
+        for _fp in fp:
+            self.logger.info(_fp)
+
+        if self.visualize_match:
+            Visualizer.audio_visual_matching(self.logger, match_info)
 
     def get_shape_inputs(self, path_list):
         _path_list = shape_from_extractor_args(path_list)
         return _path_list
 
-    def opt_matching(self, group: List[dict]) -> List[Tuple[str, str]]:
+    def opt_matching(
+        self, group: List[dict], tqdm_visual=False
+    ) -> List[Tuple[str, str]]:
         # collect speakerID
         info_keys = ("__name__", "__pair__", "__max__", "__able__")
         ids = [_k for _k in group[0].keys() if not _k in info_keys and _k[:2] == "IC"]
 
+        if tqdm_visual:
+            iterator = tqdm(ids, desc="   opt-matching ")
+        else:
+            iterator = ids
+
         prime_id = OrderedDict()
-        for sp_id in ids:
+        for sp_id in iterator:
             prime_id[sp_id] = []
 
             for record in group:

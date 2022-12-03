@@ -5,7 +5,7 @@ from logging import Logger
 import os
 from .trim.triming_area import TrimFace
 from .face_mesh.face_mesh import HeadPoseEstimation
-from .io import write_face_area, load_face_area
+from .io import load_face_area
 from .utils import Loging_MSG
 
 
@@ -34,12 +34,8 @@ class Extraction:
         Loging_MSG.large_phase(self.logger, "START TRIMING PHASE")
 
         # triming area
-        input_trim, trim_idxs = self.get_input_trim(paths)
-        trimer_result = self.trimer(input_trim)
-
-        # save triming result
-        for (result, path_idx) in zip(trimer_result, trim_idxs):
-            write_face_area(paths[path_idx][2], result)
+        input_trim, _ = self.get_input_trim(paths)
+        self.trimer(input_trim)
 
         Loging_MSG.large_phase(self.logger, "START HEAD-POSE-ESTIMATION PHASE")
 

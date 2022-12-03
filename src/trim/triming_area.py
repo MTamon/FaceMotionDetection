@@ -10,6 +10,7 @@ from multiprocessing import Pool, RLock
 from src.trim.face_detection import Detector
 from src.utils import Video
 from src.visualizer import Visualizer
+from src.io import write_face_area
 
 PRIMAL_STEP = 5.0
 
@@ -176,7 +177,7 @@ class TrimFace:
 
                 self.logger.info(f"process:{i+1} go.")
 
-                arg_set.append([proc_path[0], output, True, process_idx])
+                arg_set.append([proc_path[0], proc_path[2], output, True, process_idx])
 
             with Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
                 results += pool.starmap(self.triming_face, arg_set)
@@ -193,9 +194,16 @@ class TrimFace:
         return results
 
     def triming_face(
-        self, v_path: str, out: str = None, prog: bool = False, idx: int = 0
+        self,
+        v_path: str,
+        area_path: str,
+        out: str = None,
+        prog: bool = False,
+        idx: int = 0,
     ) -> List[dict]:
         """A process of triming face."""
+        if area_path[-5:] != ".area":
+            raise ValueError("triming area result file extension is '.area'")
 
         video = Video(v_path, "mp4v")
         if self.visualize:
@@ -295,6 +303,8 @@ class TrimFace:
                 compatible_area.append(area)
             else:
                 area["comp"] = False
+
+        compatible_area = write_face_area(area_path, compatible_area)
 
         return compatible_area
 

@@ -28,7 +28,6 @@ HEAD_POSE_KEYS = [
     "origin",
     "angles",
     "landmarks",
-    "activation",
 ]
 
 SHAPE_KEYS = [

@@ -77,7 +77,7 @@ def add_fm_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--overlap",
-        default=0.9,
+        default=0.8,
         type=float,
         help="Integration conditions in duplicate clippings. Defaults to 0.9.",
     )

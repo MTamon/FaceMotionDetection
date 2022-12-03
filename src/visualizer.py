@@ -165,9 +165,6 @@ class Visualizer:
     @staticmethod
     def head_pose_plotter(frame: ndarray, head_pose: dict):
 
-        if not head_pose["activation"]:
-            return frame
-
         frame_h, frame_w, _ = frame.shape
 
         area_info = head_pose["area"]

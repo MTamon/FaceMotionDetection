@@ -134,6 +134,7 @@ class CEJC_Builder:
                         "pair": pair,
                         "score": score,
                         "sp_id": sp_id,
+                        "used": used_rate,
                     }
                     prime_id[sp_id].append(res_dict)
                 else:
@@ -142,6 +143,7 @@ class CEJC_Builder:
                         "pair": pair,
                         "score": 0,
                         "sp_id": sp_id,
+                        "used": used_rate,
                     }
                     prime_id[sp_id].append(res_dict)
 

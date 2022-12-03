@@ -29,7 +29,7 @@ def process(logger: Logger, paths: List[str]):
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
         threshold=0.3,
-        overlap=0.9,
+        overlap=0.8,
         integrate_step=i_s,
         integrate_volatility=0.4,
         use_tracking=True,

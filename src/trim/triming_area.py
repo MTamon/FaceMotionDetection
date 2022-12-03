@@ -3,6 +3,7 @@
 from logging import Logger
 import math
 import time
+import numpy as np
 from typing import Tuple, List
 from tqdm import tqdm
 from multiprocessing import Pool, RLock
@@ -31,7 +32,7 @@ class TrimFace:
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
         threshold=0.1,
-        overlap=0.9,
+        overlap=0.8,
         integrate_step=1,
         integrate_volatility=0.4,
         use_tracking=True,
@@ -449,14 +450,16 @@ class TrimFace:
                 _area_height_t = _area["height_total"] / _area["success"]
 
                 if not (
-                    abs(1.0 - area_width_t / _area_width_t) < self.integrate_volatility
-                    and abs(1.0 - area_height_t / _area_height_t)
+                    abs(np.log2(area_width_t) - np.log2(_area_width_t))
+                    < self.integrate_volatility
+                    and abs(np.log2(area_height_t) - np.log2(_area_height_t))
                     < self.integrate_volatility
                 ):
 
                     if not (
-                        abs(1.0 - area_width / _area_width) < self.integrate_volatility
-                        and abs(1.0 - area_height / _area_height)
+                        abs(np.log2(area_width) - np.log2(_area_width))
+                        < self.integrate_volatility
+                        and abs(np.log2(area_height) - np.log2(_area_height))
                         < self.integrate_volatility
                     ):
                         continue

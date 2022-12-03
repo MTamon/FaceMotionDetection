@@ -551,7 +551,8 @@ class Visualizer:
             temp_dir, temp_file = os.path.split(mp4_MTH_path[:-4] + "TEMP_.mp3")
             temp_dir = temp_dir + "/temp"
             temp_path = temp_dir + "/" + temp_file
-            os.mkdir(temp_dir)
+            if not os.path.isdir(temp_dir):
+                os.mkdir(temp_dir)
 
             video = mpedit.VideoFileClip(mp4_ALL_path)
             video = video.set_audio(

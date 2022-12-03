@@ -169,10 +169,7 @@ class MatchAV:
         _results = []
         for _path in input_path:
             for result in results:
-                if result == {}:
-                    continue
-                ks = [k for k in result.keys() if "IC" in k]
-                if _path == result[ks[0]]["sh_path"]:
+                if _path == result[1]:
                     _results.append(result[0])
                     break
         return _results

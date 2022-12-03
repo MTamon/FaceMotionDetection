@@ -1,6 +1,7 @@
 from logging import Logger
 from typing import Iterable, List
 import cv2
+import wave
 import os
 from mediapipe.python.solutions.drawing_utils import (
     DrawingSpec,
@@ -542,7 +543,16 @@ class Visualizer:
                 logger.warn(f"No such a mp4 file: {mp4_ALL_path}")
                 continue
 
+            wave_file = wave.open(wav_path, "r")
+            fps = wave_file.getframerate()
+            nbytes = wave_file.getsampwidth()
+
             mp4_MTH_path = mp4_ALL_path[:-7] + "MTH.mp4"
+            temp_path = mp4_MTH_path[:-4] + "TEMP_MPY_wvf_snd.mp3"
             video = mpedit.VideoFileClip(mp4_ALL_path)
-            video = video.set_audio(mpedit.AudioFileClip(wav_path))
-            video.write_videofile(mp4_MTH_path)
+            video = video.set_audio(
+                mpedit.AudioFileClip(wav_path, fps=fps, nbytes=nbytes)
+            )
+
+            video.write_videofile(mp4_MTH_path, temp_audiofile=temp_path)
+            os.remove(temp_path)

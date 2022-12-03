@@ -548,11 +548,14 @@ class Visualizer:
             nbytes = wave_file.getsampwidth()
 
             mp4_MTH_path = mp4_ALL_path[:-7] + "MTH.mp4"
-            temp_path = mp4_MTH_path[:-4] + "TEMP_MPY_wvf_snd.mp3"
+            temp_dir, temp_file = os.path.split(mp4_MTH_path[:-4] + "TEMP_.mp3")
+            temp_dir = temp_dir + "/temp"
+            temp_path = temp_dir + "/" + temp_file
+            os.mkdir(temp_dir)
+
             video = mpedit.VideoFileClip(mp4_ALL_path)
             video = video.set_audio(
                 mpedit.AudioFileClip(wav_path, fps=fps, nbytes=nbytes)
             )
 
             video.write_videofile(mp4_MTH_path, temp_audiofile=temp_path)
-            os.remove(temp_path)

@@ -73,13 +73,12 @@ class MatchAV:
         # shape_result shape [shape_result: ndarray, norm_info, normalizer, fps] -> [0] & [3]
         save_path = shape_path[:-3] + ".mc"
 
-        if os.path.isfile(save_path) and not self.redo:
-            return load_measure_mouth(save_path)
-
         csv_path = match_info[".csv"]["path"]
         csv_path = "/".join(re.split(r"[\\]", csv_path))
         shape_path = "/".join(re.split(r"[\\]", shape_path))
 
+        if os.path.isfile(save_path) and not self.redo:
+            return (load_measure_mouth(save_path), shape_path)
         if not os.path.isfile(shape_path):
             measure_res = {
                 "__name__": csv_path,

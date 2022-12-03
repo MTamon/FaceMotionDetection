@@ -29,6 +29,8 @@ class MatchAV:
 
         self.lips = remove_list_duplication(list(FACEMESH_LIPS))
 
+        self.logger.info(f"USING MEASURE: {method}")
+
         if method == "vertical":
             self.method = tools.vertical
         elif method == "aspect":
@@ -144,7 +146,7 @@ class MatchAV:
                 prevs = None
                 continue
 
-            _vol, prevs = self.method(prevs, face, self.lips)
+            _vol, prevs = self.method(prevs, face, parts=self.lips)
 
             volatility += _vol
             dt_len += 1

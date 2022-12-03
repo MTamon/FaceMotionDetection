@@ -188,13 +188,13 @@ class CEJC_Builder:
         prime_pair = {}
         for info in match_info["pairs"]:
             if not info[0] in prime_pair:
-                prime_pair[info[0]] = (info[1], info[3])
+                prime_pair[info[0]] = (info[1], info[2], info[3])
             else:
                 if prime_pair[info[0]][1] < info[2]:
-                    prime_pair[info[0]] = (info[1], info[3])
+                    prime_pair[info[0]] = (info[1], info[2], info[3])
         match_info["pairs"] = [
             {"sh": pair, "wav": wav_path, "spID": sp_id}
-            for pair, (wav_path, sp_id) in prime_pair.items()
+            for pair, (wav_path, _, sp_id) in prime_pair.items()
         ]
 
         return match_info

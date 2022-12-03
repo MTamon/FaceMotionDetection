@@ -68,9 +68,14 @@ class CEJC_Builder:
         phase_args = batching(phase_args, self.batch_size)
 
         for batch in phase_args:
-            batch[0][2] = True
-            with Pool(processes=None) as pool:
-                pool.starmap(self.phase, batch)
+            if multi_proc:
+                batch[0][2] = True
+                with Pool(processes=None) as pool:
+                    pool.starmap(self.phase, batch)
+            else:
+                for _ba in batch:
+                    _ba[2] = True
+                    self.phase(*_ba)
 
     def phase(self, csv_path, prime_csv, tqdm_visual=False):
         _group = prime_csv[csv_path]

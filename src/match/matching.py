@@ -28,13 +28,14 @@ class MatchAV:
 
         for idx, batch in enumerate(seq_input):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
-            batch[0][2] = True  # tqdm ON
 
             if multi_proc:
+                batch[0][2] = True  # tqdm ON
                 with Pool(processes=None) as pool:
                     results += pool.starmap(self.phase, batch)
             else:
                 for _ba in batch:
+                    _ba[2] = True
                     results.append(self.phase(*_ba))
 
         self.logger.info(" >> DONE. << ")

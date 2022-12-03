@@ -177,3 +177,14 @@ def load_index_files(dir_path) -> List[dict]:
                     match_infos.append(match_info)
 
     return match_infos
+
+
+def write_measure_mouth(path, measure_res):
+    with open(path, "wb") as f:
+        pickle.dump(measure_res, f)
+
+
+def load_measure_mouth(path):
+    with open(path, "rb") as f:
+        measure_res = pickle.load(f)
+    return measure_res

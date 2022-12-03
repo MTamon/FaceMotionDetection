@@ -3,21 +3,26 @@
 from logging import Logger
 from typing import List
 from multiprocessing import Pool
-import numpy as np
 from tqdm import tqdm
+import numpy as np
 import re
+import os
 
 from src.utils import batching
-from src.io import load_shaped, load_luu_csv
+from src.io import load_shaped, load_luu_csv, load_measure_mouth, write_measure_mouth
 
 
 class MatchAV:
-    def __init__(self, logger: Logger, batch_size: int = 5):
+    def __init__(
+        self, logger: Logger, batch_size: int = 5, redo=False, single_proc=False
+    ):
         self.logger = logger
         self.batch_size = batch_size
+        self.redo = redo
+        self.single_proc = single_proc
 
     def __call__(
-        self, match_datas: List[dict], shape_result_path: List[str], multi_proc=True
+        self, match_datas: List[dict], shape_result_path: List[str]
     ) -> List[dict]:
         seq_input = self.concatenate_inputs(match_datas, shape_result_path)
         seq_input = batching(seq_input, self.batch_size)
@@ -29,7 +34,7 @@ class MatchAV:
         for idx, batch in enumerate(seq_input):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
 
-            if multi_proc:
+            if not self.single_proc:
                 batch[0][2] = True  # tqdm ON
                 with Pool(processes=None) as pool:
                     results += pool.starmap(self.phase, batch)
@@ -45,6 +50,10 @@ class MatchAV:
     def phase(self, match_info: dict, shape_path: str, tqdm_visualize=False):
         # match_datas shape {".csv": path, ".wav": [path1, ...]}
         # shape_result shape [shape_result: ndarray, norm_info, normalizer, fps] -> [0] & [3]
+        save_path = shape_path[:-3] + ".mc"
+
+        if os.path.isfile(save_path) and not self.redo:
+            return load_measure_mouth(save_path)
 
         csv_path = match_info[".csv"]["path"]
         csv_path = "/".join(re.split(r"[\\]", csv_path))
@@ -89,6 +98,8 @@ class MatchAV:
             measure_res[sp_id]["volatility"] += volatility
             measure_res[sp_id]["data_num"] += data_num
             measure_res[sp_id]["all_data"] += end - start
+
+        write_measure_mouth(save_path, measure_res)
 
         return measure_res
 

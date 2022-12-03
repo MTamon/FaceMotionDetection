@@ -30,6 +30,8 @@ class Shaper:
         visualize_interpolation: bool = False,
         visualize_all: bool = False,
         visualize_front: bool = False,
+        redo: bool = False,
+        single_proc: bool = False,
     ):
         # parameters
         self.logger = logger
@@ -40,6 +42,9 @@ class Shaper:
         self.visualize_interpolation = visualize_interpolation
         self.visualize_all = visualize_all
         self.visualize_front = visualize_front
+
+        self.redo = redo
+        self.single_proc = single_proc
 
         self.order = order
         self.noise_subtract = noise_subtract
@@ -104,8 +109,13 @@ class Shaper:
         for idx, batch in enumerate(batches):
             self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
 
-            with Pool(processes=None) as pool:
-                results += pool.starmap(self.phase, batch)
+            if not self.single_proc:
+                with Pool(processes=None) as pool:
+                    results += pool.starmap(self.phase, batch)
+            else:
+                for _ba in batch:
+                    _ba[3] = True
+                    results.append(self.phase(*_ba))
 
         return results
 
@@ -146,6 +156,9 @@ class Shaper:
         output_path: str,
         tqdm_visual: bool = False,
     ) -> str:
+        if os.path.isfile(output_path) and not self.redo:
+            return output_path
+
         video = Video(video_path, "mp4v")
         resolution = self.norm_resolution(video.cap_width, video.cap_height)
         fps = video.fps

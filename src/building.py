@@ -33,24 +33,20 @@ class CEJC_Builder:
         self.threshold_len = args.threshold_len
         self.threshold_use = args.threshold_use
         self.visualize_match = args.visualize_match
+        self.single_proc = args.single_proc_matching
 
-    def __call__(
-        self, shaper_list: list, matchav_list: list, multi_proc=True, redo_shape=True
-    ):
+    def __call__(self, shaper_list: list, matchav_list: list):
         shaper_list = batching(shaper_list, self.batch_size)
         matchav_list = batching(matchav_list, self.batch_size)
 
         merge_res = []
 
         for batch_s, batch_m in zip(shaper_list, matchav_list):
-            if redo_shape:
-                shape_r = self.shaper(batch_s)
-            else:
-                shape_r = [res[2] for res in batch_s]
+            shape_r = self.shaper(batch_s)
 
             # batch_m shape {".csv": path, ".wav": [path1, ...]} * batch_size
             # shape_r shape [shape_result: ndarray, norm_info, normalizer] * batch_size
-            merge_res += self.merger(batch_m, shape_r, multi_proc)
+            merge_res += self.merger(batch_m, shape_r)
 
         self.logger.info("BUILDER >> Analysis process done.")
         self.logger.info("BUILDER >> Start Optimize process.")
@@ -68,7 +64,7 @@ class CEJC_Builder:
         phase_args = batching(phase_args, self.batch_size)
 
         for batch in phase_args:
-            if multi_proc:
+            if not self.single_proc:
                 batch[0][2] = True
                 with Pool(processes=None) as pool:
                     pool.starmap(self.phase, batch)
@@ -276,6 +272,8 @@ class CEJC_Builder:
         shaper_args["visualize_interpolation"] = args.visualize_interpolation
         shaper_args["visualize_all"] = args.visualize_all
         shaper_args["visualize_front"] = args.visualize_front
+        shaper_args["redo"] = args.redo_shaper
+        shaper_args["single_proc"] = args.single_proc_shaper
 
         return shaper_args
 
@@ -283,5 +281,7 @@ class CEJC_Builder:
         match_args = {}
         match_args["logger"] = logger
         match_args["batch_size"] = args.batch_size
+        match_args["redo"] = args.redo_matching
+        match_args["single_proc"] = args.single_proc_matching
 
         return match_args

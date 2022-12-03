@@ -229,6 +229,34 @@ def add_build_args(parser: ArgumentParser):
     )
 
     parser.add_argument(
+        "--redo-shaper",
+        default=False,
+        action="store_true",
+        help="When this option is False, skip shaper process if existing .sh result",
+    )
+
+    parser.add_argument(
+        "--redo-matching",
+        default=False,
+        action="store_true",
+        help="When this option is False, skip av-matching process if existing .avidx result",
+    )
+
+    parser.add_argument(
+        "--single-proc-shaper",
+        default=False,
+        action="store_true",
+        help="When this option is True, running shaper process with single-process (recomend for debug)",
+    )
+
+    parser.add_argument(
+        "--single-proc-matching",
+        default=False,
+        action="store_true",
+        help="When this option is True, running av-matching process with single-process (recomend for debug)",
+    )
+
+    parser.add_argument(
         "--batch-size",
         default=5,
         type=int,

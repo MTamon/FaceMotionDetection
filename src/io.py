@@ -19,6 +19,7 @@ AREA_KEYS = [
     "width_max",
     "height_max",
     "success",
+    "path",
 ]
 HEAD_POSE_KEYS = [
     "step",

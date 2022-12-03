@@ -127,15 +127,22 @@ class MatchAV:
                 prevs = None
                 continue
 
-            v_pts = np.concatenate((face[0].reshape(1, -1), face[11:18]))
-            _v_pts = np.concatenate((face[11:18], face[0].reshape(1, -1)))
-            pts_len = np.linalg.norm(v_pts - _v_pts, axis=-1)
+            # v_pts = np.concatenate((face[0].reshape(1, -1), face[11:18]))
+            # _v_pts = np.concatenate((face[11:18], face[0].reshape(1, -1)))
+            # pts_len = np.linalg.norm(v_pts - _v_pts, axis=-1)
+
+            # 308, 78, 14, 13 -> mouth point
+            vertical, horizontal = (face[13] - face[14]), (face[308] - face[78])
+            aspect = np.linalg.norm(horizontal) / np.linalg.norm(vertical)
+            aspect = abs(aspect)
 
             if prevs is None:
-                prevs = pts_len
+                # prevs = pts_len
+                prevs = aspect
                 continue
 
-            volatility += np.sum(abs(pts_len - prevs))
+            # volatility += np.sum(abs(pts_len - prevs))
+            volatility += np.sum(abs(aspect - prevs))
             dt_len += 1
 
         return (volatility, dt_len)

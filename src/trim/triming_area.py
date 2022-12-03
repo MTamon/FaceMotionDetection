@@ -297,7 +297,7 @@ class TrimFace:
         compatible_area = []
         for area in face_area:
             suc_rate = area["success"] / video.cap_frames
-            if suc_rate > self.threshold and suc_rate > 300:
+            if suc_rate > self.threshold and area["success"] > 300:
                 area["comp"] = True
                 area["path"] = v_path
                 compatible_area.append(area)

@@ -22,6 +22,8 @@ def process(logger: Logger, paths):
         visualize_noise=True,
         visualize_interpolation=False,
         visualize_all=True,
+        single_proc=False,
+        redo=True,
     )
 
     paths = path_creater(paths)

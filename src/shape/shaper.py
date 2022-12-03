@@ -186,7 +186,9 @@ class Shaper:
         hme_result = load_head_pose(input_path)
         hme_result = self.to_numpy_landmark(hme_result, resolution, tqdm_visual)
 
-        init_result, cent_max, cent_min = self.init_analysis(hme_result, tqdm_visual)
+        init_result, cent_max, cent_min = self.init_analysis(
+            hme_result, tqdm_visual, fps
+        )
         cent_rough = tools.centroid_roughness(cent_max, cent_min, self.division)
         norm_info = self.estimate_front(init_result, cent_rough, tqdm_visual)
         init_result, normalizer = self.normalized_data(init_result, *norm_info)
@@ -276,13 +278,14 @@ class Shaper:
         return hme_result
 
     def init_analysis(
-        self, target: ndarray, tqdm_visual: bool = False
+        self, target: ndarray, tqdm_visual: bool = False, fps: float = 29.97
     ) -> Tuple[ndarray, ndarray, ndarray]:
         """For Initialize Analysis befor Main Analysis
 
         Args:
             target (ndarray): result of HME.
-            re_calc (ndarray): re-calculation HME.
+            tqdm_visual (bool): option for tqdm visualize. Default to False.
+            fps (float): video fps. Default to 29.97
         """
 
         all_step = len(target)
@@ -305,6 +308,7 @@ class Shaper:
             result_dict = self.add_dict_process(result_dict)
 
             facemesh = target[step]["landmarks"]
+            result_dict["fps"] = fps
 
             if facemesh is None:
                 results.append(result_dict)
@@ -477,6 +481,7 @@ class Shaper:
             "noise": False,
             "masked": False,
             "ignore": False,
+            "fps": 29.97,
         }
 
         return result_dict
@@ -681,6 +686,12 @@ class Shaper:
             progress_iterator = init_result
 
         noise_info = [r["noise"] for r in init_result]
+        coef_frate = init_result[0]["fps"] / self.fps_std
+
+        _eject_term = round(self.eject_term * coef_frate)
+        _consective_scs = round(self.consective_scs * coef_frate)
+
+        _inspect_range = round(self.inspection_range * coef_frate)
 
         for idx, step_result in enumerate(progress_iterator):
             if not step_result["noise"]:
@@ -691,16 +702,14 @@ class Shaper:
 
             serch_area = noise_info[idx:]
 
-            noise_frame = sum(serch_area[: self.inspection_range])
+            noise_frame = sum(serch_area[:_inspect_range])
 
             tail = idx
             count_scs = 0
             count_fil = 0
             last_count_scs = 0
             last_count_fil = 0
-            unstable_area_flg = (
-                noise_frame / self.inspection_range > self.threshold_noise
-            )
+            unstable_area_flg = noise_frame / _inspect_range > self.threshold_noise
             for inspct_idx, noised in enumerate(serch_area):
                 cur_idx = inspct_idx + idx
                 if noised:
@@ -715,17 +724,14 @@ class Shaper:
                     count_fil = 0
 
                 if unstable_area_flg:
-                    if count_scs >= self.consective_scs:
+                    if count_scs >= _consective_scs:
                         break
                     # ex: noise_info[.., F, F, F, T, T, F, F, F, ...]
-                    elif (
-                        count_scs >= self.eject_term
-                        and last_count_scs >= self.eject_term
-                    ):
+                    elif count_scs >= _eject_term and last_count_scs >= _eject_term:
                         if last_count_scs + count_scs > last_count_fil:
                             break
                 else:
-                    if count_scs >= self.eject_term:
+                    if count_scs >= _eject_term:
                         break
 
             for mask_idx in range(idx, tail + 1):
@@ -746,6 +752,9 @@ class Shaper:
         name: str = None,
     ) -> Tuple[ndarray]:
         all_step = len(stable_result)
+        coef_frate = stable_result[0]["fps"] / self.fps_std
+
+        _interp_margin = round(self.interp_margin * coef_frate)
 
         def get_masked_period(start_masked_idx: int):
 
@@ -786,10 +795,9 @@ class Shaper:
             masked_period, max_consect_len = get_masked_period(idx)
 
             # If the maximum interpolatable period is exceeded, the data is discarded.
-            if (
-                max_consect_len > self.ex_cond_nois_len
-                and masked_period > self.ex_cond_msk_len
-            ):
+            if max_consect_len > round(
+                self.ex_cond_nois_len * coef_frate
+            ) and masked_period > round(self.ex_cond_msk_len * coef_frate):
                 for i in range(masked_period):
                     stable_result[idx + i]["countenance"] = None
                     stable_result[idx + i]["rotate"] = None
@@ -798,7 +806,7 @@ class Shaper:
                     stable_result[idx + i]["ignore"] = True
                 continue
             # If a masked area occurs immediately after the start, the data is discarded.
-            if idx < self.interp_margin:
+            if idx < _interp_margin:
                 for i in range(idx + masked_period):
                     stable_result[i]["countenance"] = None
                     stable_result[i]["rotate"] = None
@@ -807,7 +815,7 @@ class Shaper:
                     stable_result[i]["ignore"] = True
 
                 continue
-            if idx + masked_period > all_step - self.interp_margin:
+            if idx + masked_period > all_step - _interp_margin:
                 for i in range(idx, all_step):
                     stable_result[i]["countenance"] = None
                     stable_result[i]["rotate"] = None
@@ -821,8 +829,8 @@ class Shaper:
 
             # Condition for masked data within interpolation margin.(Interpolated in foreground)
             if not self.all_weight_mode:
-                mask_b = np.full(self.interp_margin, False)
-                for i in range(self.interp_margin):
+                mask_b = np.full(_interp_margin, False)
+                for i in range(_interp_margin):
                     _i = masked_period + i
                     if stable_result[idx + _i]["_masked"]:
                         mask_b[_i - masked_period] = True
@@ -835,7 +843,7 @@ class Shaper:
                             _noised_period += 1
                         else:
                             break
-                    for i in range(self.interp_margin):
+                    for i in range(_interp_margin):
                         _i = (masked_period - 1) - _noised_period - i
                         if idx + _i < 0:
                             break
@@ -843,7 +851,7 @@ class Shaper:
                             _un_noised_period_f += 1
                         else:
                             break
-                    for i in range(self.interp_margin):
+                    for i in range(_interp_margin):
                         _i = masked_period + i
                         if not stable_result[idx + _i]["_noise"]:
                             _un_noised_period_b += 1
@@ -866,8 +874,8 @@ class Shaper:
                 data_info,
                 idx,
                 masked_period,
-                self.interp_margin,
-                self.interp_margin,
+                _interp_margin,
+                _interp_margin,
                 name,
             )
 
@@ -883,6 +891,8 @@ class Shaper:
         margin_b: int,
         name: str = None,
     ) -> ndarray:
+        coef_frate = np.sqrt(stable_result[0]["fps"] / self.fps_std)
+
         centroids = []
         rotates = []
         countenances = []
@@ -963,6 +973,7 @@ class Shaper:
         axis_time = np.array(axis_time)
 
         # masked_period -= 1 # the masked-area's next step must be "masked" == False
+        interp_weight = np.array(interp_weight) / coef_frate
 
         # interpolation for centroid
         _centroids = self.complex_interpolation(

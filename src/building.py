@@ -110,7 +110,7 @@ class CEJC_Builder:
     ) -> List[Tuple[str, str]]:
         # collect speakerID
         info_keys = ("__name__", "__pair__", "__max__", "__able__")
-        ids = [_k for _k in group[0].keys() if not _k in info_keys and _k[:2] == "IC"]
+        ids = [_k for _k in group[0].keys() if not _k in info_keys]
 
         if tqdm_visual:
             iterator = tqdm(ids, desc="   opt-matching ")

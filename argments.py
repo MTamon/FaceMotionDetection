@@ -5,7 +5,7 @@ def add_fm_args(parser: ArgumentParser):
 
     parser.add_argument(
         "--min-detection-confidence",
-        default=0.7,
+        default=0.6,
         type=float,
         help="Minimum confidence value ([0.0, 1.0]) for face detection to be considered successful. See details in https://solutions.mediapipe.dev/face_detection#min_detection_confidence.",
     )
@@ -119,7 +119,7 @@ def add_fm_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--gc-term",
-        default=100,
+        default=300,
         type=int,
         help="Garbage collection execution cycle. Defaults to 100.",
     )

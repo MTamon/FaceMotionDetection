@@ -4,6 +4,7 @@ from _path import SYSTEM_AREA
 import os
 from logging import Logger
 from typing import List
+from pprint import pprint, pformat
 
 from logger_gen import set_logger
 from src.io import load_face_area, write_face_area
@@ -19,7 +20,7 @@ def process(logger: Logger, paths: List[str]):
     visualize = True
     trimer = TrimFace(
         logger=logger,
-        min_detection_confidence=0.7,
+        min_detection_confidence=0.6,
         model_selection=1,
         frame_step=1,
         box_ratio=1.1,
@@ -28,7 +29,7 @@ def process(logger: Logger, paths: List[str]):
         size_volatility=0.03,
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
-        threshold=0.3,
+        threshold=0.1,
         overlap=0.8,
         integrate_step=i_s,
         integrate_volatility=0.4,
@@ -36,7 +37,7 @@ def process(logger: Logger, paths: List[str]):
         prohibit_integrate=0.7,
         size_limit_rate=4,
         gc=0.03,
-        gc_term=100,
+        gc_term=300,
         gc_success=0.1,
         lost_track=2,
         process_num=3,
@@ -45,6 +46,10 @@ def process(logger: Logger, paths: List[str]):
 
     # run test code
     results = trimer(paths)
+
+    pprint(results)
+    for line in pformat(results).split("\n"):
+        logger.info(line)
 
     # check pickle's save & load function
     for idx, (result, fpath) in enumerate(zip(results, paths)):
@@ -123,36 +128,36 @@ if __name__ == "__main__":
         #     "test/trim/out/result/midol1s.mp4",
         #     "test/trim/out/result/midol1s.area",
         # ),
-        # (
-        #     "./data/test/test1.mp4",
-        #     "test/trim/out/result/test1.mp4",
-        #     "test/trim/out/result/test1.area",
-        # ),
-        # (
-        #     "./data/test/test2.mp4",
-        #     "test/trim/out/result/test2.mp4",
-        #     "test/trim/out/result/test2.area",
-        # ),
-        # (
-        #     "./data/test/test3.mp4",
-        #     "test/trim/out/result/test3.mp4",
-        #     "test/trim/out/result/test3.area",
-        # ),
+        (
+            "./data/test/test1.mp4",
+            "test/trim/out/result/test1.mp4",
+            "test/trim/out/result/test1.area",
+        ),
+        (
+            "./data/test/test2.mp4",
+            "test/trim/out/result/test2.mp4",
+            "test/trim/out/result/test2.area",
+        ),
+        (
+            "./data/test/test3.mp4",
+            "test/trim/out/result/test3.mp4",
+            "test/trim/out/result/test3.area",
+        ),
         # (
         #     "./data/test/test4.mp4",
         #     "test/trim/out/result/test4.mp4",
         #     "test/trim/out/result/test4.area",
         # ),
-        # (
-        #     "./data/test/test5.mp4",
-        #     "test/trim/out/result/test5.mp4",
-        #     "test/trim/out/result/test5.area",
-        # ),
-        # (
-        #     "./data/test/test6.mp4",
-        #     "test/trim/out/result/test6.mp4",
-        #     "test/trim/out/result/test6.area",
-        # ),
+        (
+            "./data/test/test5.mp4",
+            "test/trim/out/result/test5.mp4",
+            "test/trim/out/result/test5.area",
+        ),
+        (
+            "./data/test/test6.mp4",
+            "test/trim/out/result/test6.mp4",
+            "test/trim/out/result/test6.area",
+        ),
         # (
         #     "./data/test/test7.mp4",
         #     "test/trim/out/result/test7.mp4",
@@ -163,11 +168,11 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test8.mp4",
         #     "test/trim/out/result/test8.area",
         # ),
-        # (
-        #     "./data/test/test9.mp4",
-        #     "test/trim/out/result/test9.mp4",
-        #     "test/trim/out/result/test9.area",
-        # ),
+        (
+            "./data/test/test9.mp4",
+            "test/trim/out/result/test9.mp4",
+            "test/trim/out/result/test9.area",
+        ),
         # (
         #     "./data/test/test10.mp4",
         #     "test/trim/out/result/test10.mp4",
@@ -193,11 +198,11 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test14.mp4",
         #     "test/trim/out/result/test14.area",
         # ),
-        # (
-        #     "./data/test/test15.mp4",
-        #     "test/trim/out/result/test15.mp4",
-        #     "test/trim/out/result/test15.area",
-        # ),
+        (
+            "./data/test/test15.mp4",
+            "test/trim/out/result/test15.mp4",
+            "test/trim/out/result/test15.area",
+        ),
         (
             "./data/test/test16.mp4",
             "test/trim/out/result/test16.mp4",

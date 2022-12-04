@@ -22,7 +22,7 @@ class TrimFace:
     def __init__(
         self,
         logger: Logger,
-        min_detection_confidence=0.7,
+        min_detection_confidence=0.6,
         model_selection=1,
         frame_step=1,
         box_ratio=1.1,
@@ -39,7 +39,7 @@ class TrimFace:
         prohibit_integrate=0.7,
         size_limit_rate=4,
         gc=0.03,
-        gc_term=100,
+        gc_term=300,
         gc_success=0.1,
         lost_track=2,
         process_num=3,
@@ -289,10 +289,13 @@ class TrimFace:
             video.close_writer()
 
         # final area integration
+        _overlap = self.overlap
+        self.overlap *= 0.9
         _face_area = self.integrate_area(progress, face_area)
         while len(_face_area) != len(face_area):
             face_area = _face_area
             _face_area = self.integrate_area(progress, face_area)
+        self.overlap = _overlap
 
         # remove under success rate
         compatible_area = []
@@ -756,7 +759,7 @@ class TrimFace:
             for group in areas:
                 if group == []:
                     continue
-                if _path == group[0]["path"]:
+                if _path[0] == group[0]["path"]:
                     _areas[-1] = group
                     break
         return _areas

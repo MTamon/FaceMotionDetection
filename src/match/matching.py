@@ -106,9 +106,6 @@ class MatchAV:
             end = int((event["endTime"] + 0.5) * fps)
             sp_id = event["speakerID"].split("_")[0]  # part of ICXX
 
-            if sp_id[:2] != "IC":
-                continue
-
             if not sp_id in measure_res.keys():
                 measure_res[sp_id] = {
                     "volatility": 0.0,

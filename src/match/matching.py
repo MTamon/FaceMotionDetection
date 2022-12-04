@@ -118,7 +118,7 @@ class MatchAV:
             volatility, data_num = self.measure_mouth_movement(target)
             measure_res[sp_id]["volatility"] += volatility
             measure_res[sp_id]["data_num"] += data_num
-            measure_res[sp_id]["all_data"] += end - start
+            measure_res[sp_id]["all_data"] += end - start + 1
 
         write_measure_mouth(save_path, measure_res)
 

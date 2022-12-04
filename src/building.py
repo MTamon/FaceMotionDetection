@@ -179,9 +179,10 @@ class CEJC_Builder:
         for _k in prime_pair:
             pair_sum = 1e-4
             for record in prime_pair[_k]:
-                pair_sum += record["score"]
+                pair_sum += record["score"] ** (1 + record["used"])
             for record in prime_pair[_k]:
-                record["score"] /= pair_sum
+                _score = record["score"] ** (1 + record["used"])
+                record["score"] = _score / pair_sum
 
         return prime_id
 

@@ -143,7 +143,7 @@ def add_fm_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--process-num",
-        default=3,
+        default=7,
         type=int,
         help="Maximum number of processes in parallel processing. Defaults to 3.",
     )
@@ -277,7 +277,7 @@ def add_build_args(parser: ArgumentParser):
 
     parser.add_argument(
         "--batch-size",
-        default=5,
+        default=7,
         type=int,
         help="Multi-process batch size. Defaults to 5.",
     )

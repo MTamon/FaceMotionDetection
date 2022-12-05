@@ -76,6 +76,12 @@ def add_fm_args(parser: ArgumentParser):
         help="Exclude clippings with low detection rates. Defaults to 0.3.",
     )
     parser.add_argument(
+        "--threshold-size-rate",
+        default=2.0,
+        type=float,
+        help="Tracking parameter for comparing each face size. Defaults to 2.",
+    )
+    parser.add_argument(
         "--overlap",
         default=0.8,
         type=float,
@@ -101,7 +107,7 @@ def add_fm_args(parser: ArgumentParser):
     )
     parser.add_argument(
         "--prohibit-integrate",
-        default=0.7,
+        default=1.1,
         type=float,
         help="Threshold to prohibit integration of clippings. Defaults to 0.7.",
     )
@@ -158,6 +164,12 @@ def add_fm_args(parser: ArgumentParser):
         default=False,
         action="store_true",
         help="Redo data analysis against existing result one",
+    )
+    parser.add_argument(
+        "--sigle-process",
+        default=False,
+        action="store_true",
+        help="Running without multiprocess.(triming function only)",
     )
 
     return parser

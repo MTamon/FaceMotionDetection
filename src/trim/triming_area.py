@@ -3,6 +3,7 @@
 from logging import Logger
 import math
 import time
+import os
 import numpy as np
 from typing import Tuple, List
 from tqdm import tqdm
@@ -11,7 +12,7 @@ from multiprocessing import Pool, RLock
 from src.trim.face_detection import Detector
 from src.utils import Video
 from src.visualizer import Visualizer
-from src.io import write_face_area
+from src.io import write_face_area, load_face_area
 
 PRIMAL_STEP = 5.0
 
@@ -32,18 +33,21 @@ class TrimFace:
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
         threshold=0.1,
+        threshold_size_rate=2,
         overlap=0.8,
         integrate_step=1,
         integrate_volatility=0.4,
         use_tracking=True,
-        prohibit_integrate=0.7,
+        prohibit_integrate=1.1,
         size_limit_rate=4,
         gc=0.03,
         gc_term=300,
         gc_success=0.1,
         lost_track=2,
         process_num=3,
+        redo=False,
         visualize=False,
+        single_process=False,
     ) -> None:
         """
         Args:
@@ -77,6 +81,8 @@ class TrimFace:
                 in non-tracking mode, regardless of the period of time lost. Defaults to 0.5.
             threshold (float, optional):
                 Exclude clippings with low detection rates. Defaults to 0.3.
+            threshold_size_rate (float, optional):
+                Tracking parameter for comparing each face size. Defaults to 2.
             overlap (float, optional):
                 Integration conditions in duplicate clippings. Defaults to 0.9.
             integrate_step (int, optional):
@@ -102,9 +108,13 @@ class TrimFace:
                 Defaults to 2.
             process_num (int, optional):
                 Maximum number of processes in parallel processing. Defaults to 3.
+            redo (bool, optional):
+                Redo process when exist result file. Defaults to False.
             visualize (bool, optional):
                 Visualization options for the analysis process.
                 When use this option, processing speed is made be lower. Defaults to False.
+            single_process:
+                Running with single-thread.
         """
 
         self.min_detection_confidence = min_detection_confidence
@@ -119,6 +129,7 @@ class TrimFace:
         self.sub_track_volatility = sub_track_volatility
         self.sub_size_volatility = sub_size_volatility
         self.threshold = threshold
+        self.threshold_size_rate = threshold_size_rate
         self.overlap = overlap
         self.integrate_step = integrate_step
         self.integrate_volatility = integrate_volatility
@@ -130,7 +141,9 @@ class TrimFace:
         self.gc_success = gc_success
         self.lost_track = lost_track
         self.progress_num = process_num
+        self.redo = redo
         self.visualize = visualize
+        self.sigle_process = single_process
 
     def __call__(self, paths: List[Tuple[str]]) -> List[List[dict]]:
         """
@@ -180,8 +193,14 @@ class TrimFace:
 
                 arg_set.append([proc_path[0], proc_path[2], output, True, process_idx])
 
-            with Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
-                results += pool.starmap(self.triming_face, arg_set)
+            if self.sigle_process:
+                for _ba in arg_set:
+                    results.append(self.triming_face(*_ba))
+            else:
+                with Pool(
+                    initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)
+                ) as pool:
+                    results += pool.starmap(self.triming_face, arg_set)
 
             for i in range(len(batch)):
                 self.logger.info(
@@ -205,6 +224,9 @@ class TrimFace:
         """A process of triming face."""
         if area_path[-5:] != ".area":
             raise ValueError("triming area result file extension is '.area'")
+
+        if os.path.isfile(area_path) and not self.redo:
+            return load_face_area(area_path)
 
         video = Video(v_path, "mp4v")
         if self.visualize:
@@ -244,7 +266,9 @@ class TrimFace:
             face_ids = []
             faces = []
             for face in result_faces:
-                compatible_face_id = self.judge_face(progress, face_area, face)
+                compatible_face_id = self.judge_face(
+                    progress, face_area, face, video.fps
+                )
                 face_ids.append(compatible_face_id)
                 faces.append(face)
 
@@ -368,6 +392,9 @@ class TrimFace:
 
             new_area = self.combine_area(area1, area2)
 
+            if detect_include(area1, area2):
+                return [True, new_area]
+
             new_width = (new_area["width_min"] + new_area["width_max"]) / 2
             new_height = (new_area["height_min"] + new_area["height_max"]) / 2
             overlap_flg = True
@@ -380,6 +407,21 @@ class TrimFace:
                 overlap_flg = False
 
             return [overlap_flg, new_area]
+
+        def detect_include(area1: dict, area2: dict) -> bool:
+            if area1["width"] < area2["width"]:
+                tmp = area2
+                area2 = area1
+                area1 = tmp
+            if area1["height"] < area2["height"]:
+                return False
+
+            cond1 = area1["xmin"] < area2["xmin"]
+            cond2 = area1["ymin"] < area2["ymin"]
+            cond3 = area1["xmin"] + area1["width"] > area2["xmin"] + area2["width"]
+            cond4 = area1["ymin"] + area1["height"] > area2["ymin"] + area2["height"]
+
+            return cond1 and cond2 and cond3 and cond4
 
         def detect_area_overlapping(area1: dict, area2: dict) -> bool:
             """[overlap, include_relation, x_overlap, y_overlap, overlap_rate[a1_x, a1_y, a2_x, a2_y]]"""
@@ -433,8 +475,8 @@ class TrimFace:
                 if n in skip_id:  # integrated
                     continue
                 if (
-                    area["success"] / progress > self.prohibit_integrate
-                    and _area["success"] / progress > self.prohibit_integrate
+                    area["success"] + _area["success"]
+                    > progress * self.prohibit_integrate
                 ):
                     continue
                 if (area["prev"] is not None) and (_area["prev"] is not None):
@@ -560,7 +602,9 @@ class TrimFace:
 
         return new_area
 
-    def judge_face(self, progress: int, face_area: List[dict], face) -> List[tuple]:
+    def judge_face(
+        self, progress: int, face_area: List[dict], face, fps
+    ) -> List[tuple]:
         """Compare bounding boxes with existing bounding boxes
 
         Args:
@@ -569,6 +613,27 @@ class TrimFace:
         """
 
         def judge_coordinates(face: dict, area: dict, volatility: float):
+            if area["lost_count"] < round(fps):
+                last_face = area["final_detect"]
+
+                W = max(last_face["width"], face["width"])
+                w = min(last_face["width"], face["width"])
+                H = max(last_face["height"], face["height"])
+                h = min(last_face["height"], face["height"])
+
+                if H / h > self.threshold_size_rate or W / w > self.threshold_size_rate:
+                    return False
+
+                x_up_lim = last_face["xmin"] + last_face["width"]
+                x_dw_lim = last_face["xmin"] - last_face["width"]
+                y_up_lim = last_face["ymin"] + last_face["height"]
+                y_dw_lim = last_face["ymin"] - last_face["height"]
+
+                cond1 = x_dw_lim <= face["xmin"] <= x_up_lim
+                cond2 = y_dw_lim <= face["ymin"] <= y_up_lim
+
+                return cond1 and cond2
+
             radians_x = area["xmax"] - area["xmin"]
             radians_y = area["ymax"] - area["ymin"]
 

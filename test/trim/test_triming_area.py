@@ -30,18 +30,21 @@ def process(logger: Logger, paths: List[str]):
         sub_track_volatility=1.0,
         sub_size_volatility=0.5,
         threshold=0.1,
+        threshold_size_rate=2,
         overlap=0.8,
         integrate_step=i_s,
         integrate_volatility=0.4,
         use_tracking=True,
-        prohibit_integrate=0.7,
+        prohibit_integrate=1.1,
         size_limit_rate=4,
         gc=0.03,
         gc_term=300,
         gc_success=0.1,
         lost_track=2,
         process_num=3,
+        redo=True,
         visualize=visualize,
+        single_process=True,
     )
 
     # run test code
@@ -133,31 +136,31 @@ if __name__ == "__main__":
             "test/trim/out/result/test1.mp4",
             "test/trim/out/result/test1.area",
         ),
-        (
-            "./data/test/test2.mp4",
-            "test/trim/out/result/test2.mp4",
-            "test/trim/out/result/test2.area",
-        ),
-        (
-            "./data/test/test3.mp4",
-            "test/trim/out/result/test3.mp4",
-            "test/trim/out/result/test3.area",
-        ),
+        # (
+        #     "./data/test/test2.mp4",
+        #     "test/trim/out/result/test2.mp4",
+        #     "test/trim/out/result/test2.area",
+        # ),
+        # (
+        #     "./data/test/test3.mp4",
+        #     "test/trim/out/result/test3.mp4",
+        #     "test/trim/out/result/test3.area",
+        # ),
         # (
         #     "./data/test/test4.mp4",
         #     "test/trim/out/result/test4.mp4",
         #     "test/trim/out/result/test4.area",
         # ),
-        (
-            "./data/test/test5.mp4",
-            "test/trim/out/result/test5.mp4",
-            "test/trim/out/result/test5.area",
-        ),
-        (
-            "./data/test/test6.mp4",
-            "test/trim/out/result/test6.mp4",
-            "test/trim/out/result/test6.area",
-        ),
+        # (
+        #     "./data/test/test5.mp4",
+        #     "test/trim/out/result/test5.mp4",
+        #     "test/trim/out/result/test5.area",
+        # ),
+        # (
+        #     "./data/test/test6.mp4",
+        #     "test/trim/out/result/test6.mp4",
+        #     "test/trim/out/result/test6.area",
+        # ),
         # (
         #     "./data/test/test7.mp4",
         #     "test/trim/out/result/test7.mp4",
@@ -168,11 +171,11 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test8.mp4",
         #     "test/trim/out/result/test8.area",
         # ),
-        (
-            "./data/test/test9.mp4",
-            "test/trim/out/result/test9.mp4",
-            "test/trim/out/result/test9.area",
-        ),
+        # (
+        #     "./data/test/test9.mp4",
+        #     "test/trim/out/result/test9.mp4",
+        #     "test/trim/out/result/test9.area",
+        # ),
         # (
         #     "./data/test/test10.mp4",
         #     "test/trim/out/result/test10.mp4",
@@ -198,20 +201,20 @@ if __name__ == "__main__":
         #     "test/trim/out/result/test14.mp4",
         #     "test/trim/out/result/test14.area",
         # ),
-        (
-            "./data/test/test15.mp4",
-            "test/trim/out/result/test15.mp4",
-            "test/trim/out/result/test15.area",
-        ),
-        (
-            "./data/test/test16.mp4",
-            "test/trim/out/result/test16.mp4",
-            "test/trim/out/result/test16.area",
-        ),
-        (
-            "./data/test/test17.mp4",
-            "test/trim/out/result/test17.mp4",
-            "test/trim/out/result/test17.area",
-        ),
+        # (
+        #     "./data/test/test15.mp4",
+        #     "test/trim/out/result/test15.mp4",
+        #     "test/trim/out/result/test15.area",
+        # ),
+        # (
+        #     "./data/test/test16.mp4",
+        #     "test/trim/out/result/test16.mp4",
+        #     "test/trim/out/result/test16.area",
+        # ),
+        # (
+        #     "./data/test/test17.mp4",
+        #     "test/trim/out/result/test17.mp4",
+        #     "test/trim/out/result/test17.area",
+        # ),
     ]
     process(log, paths_input)

@@ -23,6 +23,7 @@ class HeadPoseEstimation:
         min_tracking_confidence=0.5,
         max_num_face=1,
         batch_size=5,
+        redo=False,
         visualize=False,
         result_length=100000,
     ) -> None:
@@ -39,6 +40,8 @@ class HeadPoseEstimation:
                 https://solutions.mediapipe.dev/face_mesh#max_num_faces.
             batch_size (int, optional):
                 Batch size.
+            redo (bool, optional):
+                Redo process when exist result file. Defaults to False.
             visualize (bool, optional):
                 visualize result as video. Defaults to False.
             result_length (int, optional):
@@ -50,6 +53,7 @@ class HeadPoseEstimation:
         self.min_tracking_confidence = min_tracking_confidence
         self.max_num_face = max_num_face
         self.batch_size = batch_size
+        self.redo = redo
         self.visualize = visualize
         self.result_length = result_length
 
@@ -159,6 +163,11 @@ class HeadPoseEstimation:
         last_step = 0
         idx = 0
 
+        # When exist results & self.redo == False
+        _hp_path = self.generate_path(hp_file_path, (last_step, len(video)), area_id)
+        if os.path.isfile(_hp_path) and not self.redo:
+            q_out.put(_hp_path)
+
         # wait for tensor-flow message
         time.sleep(1)
 
@@ -201,14 +210,18 @@ class HeadPoseEstimation:
     def write_result(
         self, hp_path: str, results: np.ndarray, term: Iterable[int], area_id: int
     ) -> str:
+        path = self.generate_path(hp_path, term, area_id)
+        write_head_pose(path, results)
+
+        return path
+
+    def generate_path(self, hp_path: str, term: Iterable[int], area_id: int) -> str:
         hp_base_name = os.path.basename(hp_path)
         hp_dir_name = os.path.dirname(hp_path)
 
         name, ftype = hp_base_name.split(".")
         name = name + f"_{area_id}_{term[0]}_{term[1]}.{ftype}"
         path = hp_dir_name + "/" + name
-
-        write_head_pose(path, results)
 
         return path
 

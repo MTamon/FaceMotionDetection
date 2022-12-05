@@ -137,6 +137,7 @@ class Extraction:
         trim_args["sub_track_volatility"] = args.sub_track_volatility
         trim_args["sub_size_volatility"] = args.sub_size_volatility
         trim_args["threshold"] = args.threshold
+        trim_args["threshold_size_rate"] = args.threshold_size_rate
         trim_args["overlap"] = args.overlap
         trim_args["integrate_step"] = args.integrate_step
         trim_args["integrate_volatility"] = args.integrate_volatility
@@ -148,7 +149,9 @@ class Extraction:
         trim_args["gc_success"] = args.gc_success
         trim_args["lost_track"] = args.lost_track
         trim_args["process_num"] = args.process_num
+        trim_args["redo"] = args.redo_exist_result
         trim_args["visualize"] = args.visualize
+        trim_args["single_process"] = args.sigle_process
 
         return trim_args
 
@@ -159,6 +162,7 @@ class Extraction:
         hpe_args["min_detection_confidence"] = args.min_detection_confidence
         hpe_args["min_tracking_confidence"] = args.min_tracking_confidence
         hpe_args["max_num_face"] = args.max_num_face
+        hpe_args["redo"] = args.redo_exist_result
         hpe_args["visualize"] = args.visualize
         hpe_args["result_length"] = args.result_length
         hpe_args["batch_size"] = args.process_num

@@ -500,6 +500,9 @@ def batching(data_list: list, batch_size: int) -> list:
         if len(batches[-1]) == batch_size:
             batches.append([])
             continue
+        
+    if batches == [[]]:
+        batches = []
 
     return batches
 

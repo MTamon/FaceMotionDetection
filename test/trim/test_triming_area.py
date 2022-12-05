@@ -126,16 +126,21 @@ if __name__ == "__main__":
         #     "test/trim/out/result/short2.mp4",
         #     "test/trim/out/result/short2.area",
         # ),
+        (
+            "./data/test/short3.mp4",
+            "test/trim/out/result/short3.mp4",
+            "test/trim/out/result/short3.area",
+        ),
         # (
         #     "./data/test/midol1s.mp4",
         #     "test/trim/out/result/midol1s.mp4",
         #     "test/trim/out/result/midol1s.area",
         # ),
-        (
-            "./data/test/test1.mp4",
-            "test/trim/out/result/test1.mp4",
-            "test/trim/out/result/test1.area",
-        ),
+        # (
+        #     "./data/test/test1.mp4",
+        #     "test/trim/out/result/test1.mp4",
+        #     "test/trim/out/result/test1.area",
+        # ),
         # (
         #     "./data/test/test2.mp4",
         #     "test/trim/out/result/test2.mp4",

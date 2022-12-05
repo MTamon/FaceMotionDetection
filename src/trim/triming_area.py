@@ -1,7 +1,6 @@
 """This code is for triming area from video which include face each time."""
 
 from logging import Logger
-import math
 import time
 import os
 import numpy as np
@@ -350,6 +349,8 @@ class TrimFace:
         comb_area["width_min"] = min(area1["width_min"], area2["width_min"])
         comb_area["height_min"] = min(area1["height_min"], area2["height_min"])
 
+        comb_area["center_total"] = area1["center_total"] + area2["center_total"]
+
         comb_area["success"] = area1["success"] + area2["success"]
         comb_area["update"] = area1["update"] or area2["update"]
         if area1["lost_count"] < area2["lost_count"]:
@@ -671,16 +672,19 @@ class TrimFace:
             return result_width and result_height
 
         def distance_function(
-            face: dict, area: dict, candidates_id: list, ref: str, step: int
+            face: dict, area: List[dict], candidates_id: list
         ) -> list:
             _candidates = []
             for area_id in candidates_id:
+                target = area[area_id]
+                _center = target["center_total"] / target["success"]
+                coef1 = (np.tanh((-target["lost_count"] + fps * 3) * 1.5) + 1.0) / 2.0
+                coef2 = 1.0 - coef1
 
-                area_width = area[area_id][ref]["width"]
-                area_height = area[area_id][ref]["height"]
-                dist_w = abs(math.log(area_width / face["width"]))
-                dist_h = abs(math.log(area_height / face["height"]))
-                dist = (dist_w**2 + dist_h**2) + PRIMAL_STEP * step
+                dist1 = np.linalg.norm(target["final_detect"]["center"] - _center)
+                dist2 = np.linalg.norm(face["center"] - _center)
+                dist = coef1 * dist1 + coef2 * dist2
+
                 _candidates = self.insertion_sort(_candidates, (area_id, dist))
 
             return _candidates
@@ -743,21 +747,17 @@ class TrimFace:
 
             if len(candidates) >= 1:
                 # case rest more than one candidates: second, primary size similality
-                compatible_face_id = distance_function(
-                    face, face_area, candidates, "prev", 0
-                )
+                compatible_face_id = distance_function(face, face_area, candidates)
 
             elif len(final_dtect_candidates) >= 1:
                 # case rest more than one final_detect candidates: second, primary size similality
                 compatible_face_id = distance_function(
-                    face, face_area, final_dtect_candidates, "final_detect", 1
+                    face, face_area, final_dtect_candidates
                 )
 
             elif len(candidates) == 0:
                 # case rest no candidates: second, primary size similality
-                compatible_face_id = distance_function(
-                    face, face_area, lost_candidates, "average_wh", 2
-                )
+                compatible_face_id = distance_function(face, face_area, lost_candidates)
 
         elif len(compatible_face_id) == 0:
             compatible_face_id = None
@@ -777,6 +777,7 @@ class TrimFace:
             "height_min": face["height"],
             "width_max": face["width"],
             "height_max": face["height"],
+            "center_total": face["center"],
             "success": 1,
             "update": True,
             "garbage_collect": False,

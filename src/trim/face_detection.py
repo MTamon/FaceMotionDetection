@@ -1,6 +1,7 @@
 import cv2
 from mediapipe.python.solutions.face_detection import FaceDetection
 from numpy import ndarray
+import numpy as np
 
 
 class Detector:
@@ -54,6 +55,8 @@ class Detector:
             width = width if width < 1 else 1.0
             height = height if height < 1 else 1.0
 
+            center = np.array([(xmin + xmax) / 2, (ymin + ymax) / 2])
+
             bboxes.append(
                 {
                     "xmin": xmin,
@@ -62,6 +65,7 @@ class Detector:
                     "ymin": ymin,
                     "ymax": ymax,
                     "height": height,
+                    "center": center,
                 }
             )
 

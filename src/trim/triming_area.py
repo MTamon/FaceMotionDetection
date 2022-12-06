@@ -174,6 +174,7 @@ class TrimFace:
 
         for idx, batch in enumerate(process_batch):
             arg_set = []
+            self.logger.info(f" >> Process {idx+1}/{all_batch} << ")
 
             dw_sorted = []
             # find largest video file in batch

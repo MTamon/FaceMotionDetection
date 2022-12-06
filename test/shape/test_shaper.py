@@ -18,10 +18,10 @@ def process(logger: Logger, paths):
     shaping = Shaper(
         logger=logger,
         batch_size=3,
-        visualize_graph=True,
-        visualize_noise=True,
+        visualize_graph=False,
+        visualize_noise=False,
         visualize_interpolation=False,
-        visualize_all=True,
+        visualize_all=False,
         single_proc=False,
         redo=True,
     )

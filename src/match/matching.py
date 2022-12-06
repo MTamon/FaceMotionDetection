@@ -46,12 +46,12 @@ class MatchAV:
         seq_input = self.concatenate_inputs(match_datas, shape_result_path)
         seq_input = batching(seq_input, self.batch_size)
 
-        all_process = len(match_datas)
+        all_process = len(seq_input)
 
         results = []
 
         for idx, batch in enumerate(seq_input):
-            self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
+            self.logger.info(f" >> Progress (matching): {(idx+1)}/{all_process} << ")
 
             if not self.single_proc:
                 batch[0][2] = True  # tqdm ON
@@ -61,8 +61,6 @@ class MatchAV:
                 for _ba in batch:
                     _ba[2] = True
                     results.append(self.phase(*_ba))
-
-        self.logger.info(" >> DONE. << ")
 
         results = self.match_sh_order(shape_result_path, results)
 

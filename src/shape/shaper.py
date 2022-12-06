@@ -110,7 +110,7 @@ class Shaper:
         results = []
 
         for idx, batch in enumerate(batches):
-            self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
+            self.logger.info(f" >> Progress (shaping) : {(idx+1)}/{all_process} << ")
 
             if not self.single_proc:
                 with Pool(processes=None) as pool:
@@ -151,6 +151,9 @@ class Shaper:
                 batch = []
                 max_id = 0
                 max_frame = 0
+
+        if len(batches[-1]) < used_size:
+            batches[-1][3] = True
 
         return batches
 

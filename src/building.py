@@ -40,13 +40,18 @@ class CEJC_Builder:
         matchav_list = batching(matchav_list, self.batch_size)
 
         merge_res = []
+        all_process = len(shaper_list)
 
-        for batch_s, batch_m in zip(shaper_list, matchav_list):
+        for i, (batch_s, batch_m) in enumerate(zip(shaper_list, matchav_list)):
+            self.logger.info(f"BULDING {i}/{all_process}")
+
             shape_r = self.shaper(batch_s)
 
             # batch_m shape {".csv": path, ".wav": [path1, ...]} * batch_size
             # shape_r shape [shape_result: ndarray, norm_info, normalizer] * batch_size
             merge_res += self.merger(batch_m, shape_r)
+
+            self.logger.info("BULDING Done.")
 
         _merge_res = []
         for path in merge_res:

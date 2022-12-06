@@ -166,6 +166,6 @@ class Extraction:
         hpe_args["visualize"] = args.visualize
         hpe_args["result_length"] = args.result_length
         hpe_args["batch_size"] = args.process_num
-        hpe_args["single_process"] = args.sigle_process
+        hpe_args["single_proc"] = args.sigle_process
 
         return hpe_args

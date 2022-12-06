@@ -170,6 +170,8 @@ class TrimFace:
         tqdm.set_lock(RLock())
         # pool = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
 
+        all_batch = len(process_batch)
+
         for idx, batch in enumerate(process_batch):
             arg_set = []
 
@@ -203,7 +205,7 @@ class TrimFace:
 
             for i in range(len(batch)):
                 self.logger.info(
-                    f"batch {idx} / process:{i+1} done. -> all area num = {len(results[cur_idx])}"
+                    f"[batch {idx}/{all_batch}] process:{i+1} done. -> all area num = {len(results[cur_idx])}"
                 )
                 cur_idx += 1
             self.logger.info("")

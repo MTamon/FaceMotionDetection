@@ -3,7 +3,7 @@
 import os
 import time
 from logging import Logger
-from multiprocessing import Process, Queue
+from multiprocessing import Pool
 from typing import Iterable, List
 
 import cv2
@@ -24,8 +24,9 @@ class HeadPoseEstimation:
         max_num_face=1,
         batch_size=5,
         redo=False,
+        single_proc=False,
         visualize=False,
-        result_length=100000,
+        result_length=1000000,
     ) -> None:
         """
         Args:
@@ -42,6 +43,8 @@ class HeadPoseEstimation:
                 Batch size.
             redo (bool, optional):
                 Redo process when exist result file. Defaults to False.
+            single_proc (bool, optional):
+                Running with single-thread.
             visualize (bool, optional):
                 visualize result as video. Defaults to False.
             result_length (int, optional):
@@ -56,6 +59,7 @@ class HeadPoseEstimation:
         self.redo = redo
         self.visualize = visualize
         self.result_length = result_length
+        self.single_proc = single_proc
 
         self.detector_args = {
             "static_image_mode": False,
@@ -77,6 +81,7 @@ class HeadPoseEstimation:
 
         results = []
         all_args = []
+        hpe_path_order = []
 
         for idx, phase_args in enumerate(all_phase_args):
             video_path = phase_args[0]
@@ -84,74 +89,65 @@ class HeadPoseEstimation:
             phase_area = phase_args[2]
             visualize_path = None
 
+            video_len = len(Video(video_path))
+
             if self.visualize:
                 if len(phase_args) < 4:
                     ValueError("visualize-mode needs visualize-path")
                 visualize_path = phase_args[3]
 
             for i, area in enumerate(phase_area):
-                queue_output = Queue()
                 all_args.append(
-                    [
-                        queue_output,
-                        video_path,
-                        area,
-                        i,
-                        hp_file_path,
-                        visualize_path,
-                        False,
-                    ]
+                    [video_path, area, i, hp_file_path, visualize_path, False]
                 )
 
+                hpe_path = self.generate_path(hp_file_path, (0, video_len - 1), i)
+                hpe_path_order.append(hpe_path)
+
         all_args = batching(all_args, self.batch_size)
+
+        ################################
+        all_process = len(all_args)
+
+        results = []
+
         for idx, batch in enumerate(all_args):
-            self.logger.info(f"Progress: {(idx+1)}/{len(all_args)}")
-            batch[0][-1] = True  # tqdm visualize
-            results.append(self.phase(batch))
+            self.logger.info(f" >> Progress: {(idx+1)}/{all_process} << ")
+
+            if not self.single_proc:
+                batch[0][5] = True  # tqdm ON
+                with Pool(processes=None) as pool:
+                    results += pool.starmap(self.phase, batch)
+            else:
+                for _ba in batch:
+                    _ba[5] = True
+                    results.append(self.phase(*_ba))
+
+        self.logger.info(" >> DONE. << ")
+        #################################
+
+        results = self.match_hp_order(hpe_path_order, results)
 
         return results
 
-    def phase(self, arg_set_list) -> List[str]:
+    def match_hp_order(self, order_path, results):
+        _results = []
+        for _path in order_path:
+            for result in results:
+                if _path == result:
+                    _results.append(result)
+                    break
+        return _results
 
-        procs_set = []
-
-        # display video info
-        video_list = []
-        for arg_set in arg_set_list:
-            if not arg_set[1] in video_list:
-                video_list.append(arg_set[1])
-        for input_v in video_list:
-            self.logger.info(Video(input_v, "mp4v"))
-
-        # generate process
-        for i, arg_set in enumerate(arg_set_list):
-            procs_set.append(Process(target=self.apply_face_mesh, args=(arg_set)))
-            self.logger.info(f"process:{i+1} go.")
-            procs_set[i].start()
-
-        hp_paths = []
-
-        for i in range(len(arg_set_list)):
-            q_out = arg_set_list[i][0]
-            hp_paths.append(q_out.get())
-            procs_set[i].join()
-            self.logger.info(f"process:{i+1} done.")
-
-        self.logger.info("complete estimation process!")
-        self.logger.info("")
-
-        return hp_paths
-
-    def apply_face_mesh(
+    def phase(
         self,
-        q_out: Queue,
         input_v: str,
         area: dict,
         area_id: int,
         hp_file_path: str,
         output: str = None,
         progress: bool = False,
-    ) -> List[str]:
+    ) -> str:
 
         # wait for tensor-flow message
         time.sleep(area_id * 0.1)
@@ -164,9 +160,11 @@ class HeadPoseEstimation:
         idx = 0
 
         # When exist results & self.redo == False
-        _hp_path = self.generate_path(hp_file_path, (last_step, len(video)), area_id)
+        _hp_path = self.generate_path(
+            hp_file_path, (last_step, len(video) - 1), area_id
+        )
         if os.path.isfile(_hp_path) and not self.redo:
-            q_out.put(_hp_path)
+            return _hp_path
 
         # wait for tensor-flow message
         time.sleep(1)
@@ -205,7 +203,7 @@ class HeadPoseEstimation:
 
         hp_path = self.write_result(hp_file_path, results, (last_step, idx), area_id)
 
-        q_out.put(hp_path)
+        return hp_path
 
     def write_result(
         self, hp_path: str, results: np.ndarray, term: Iterable[int], area_id: int

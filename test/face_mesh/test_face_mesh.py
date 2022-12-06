@@ -21,14 +21,14 @@ def process(logger: Logger, paths):
         max_num_face=1,
         visualize=visualize,
         result_length=1000000,
+        redo=True,
     )
 
     # run test code
     hp_paths = hpe(paths)
 
     for hpp in hp_paths:
-        for hp in hpp:
-            logger.info(f"saved file {hp}")
+        logger.info(f"saved file {hpp}")
 
 
 if __name__ == "__main__":

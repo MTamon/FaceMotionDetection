@@ -120,6 +120,14 @@ class Shaper:
                     _ba[3] = True
                     results.append(self.phase(*_ba))
 
+        _results = []
+        for result in results:
+            if result[1]:
+                self.logger.info(f"Accept & create data {result[0]}")
+            else:
+                self.logger.info(f"Reject data {result[0]}")
+            _results.append(result[0])
+
         results = self.match_sh_order(paths, results)
 
         return results
@@ -163,9 +171,9 @@ class Shaper:
         video_path: str,
         output_path: str,
         tqdm_visual: bool = False,
-    ) -> str:
+    ) -> Tuple[str, bool]:
         if os.path.isfile(output_path) and not self.redo:
-            return output_path
+            return output_path, True
 
         video = Video(video_path, "mp4v")
         resolution = self.norm_resolution(video.cap_width, video.cap_height)
@@ -197,8 +205,7 @@ class Shaper:
         )
 
         if stop:
-            self.logger.info("! Reject data due to lack of available data.")
-            return output_path
+            return output_path, False
 
         cent_rough = tools.centroid_roughness(cent_max, cent_min, self.division)
         norm_info = self.estimate_front(init_result, cent_rough, tqdm_visual)
@@ -231,7 +238,7 @@ class Shaper:
             output_path, interpolation_result, norm_info, normalizer, data_info, fps
         )
 
-        return output_path
+        return output_path, True
 
     def norm_resolution(self, width, height):
         c_w = width / self.resolution_std[0]

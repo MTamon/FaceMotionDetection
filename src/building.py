@@ -131,12 +131,14 @@ class CEJC_Builder:
                 pair = record["__pair__"]
                 length_max = record["__max__"]
                 volatility = record[sp_id]["volatility"]
+
                 if record[sp_id]["data_num"] > record[sp_id]["fps"] * 10:
                     score = volatility / record[sp_id]["data_num"]
                     used_rate = record[sp_id]["data_num"] / record[sp_id]["all_data"]
                 else:
                     score = 0
                     used_rate = 0
+
                 if length_max > self.threshold_len and used_rate > self.threshold_use:
                     res_dict = {
                         "name": name,

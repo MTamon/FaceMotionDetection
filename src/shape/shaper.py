@@ -123,12 +123,12 @@ class Shaper:
         _results = []
         for result in results:
             if result[1]:
-                self.logger.info(f"Accept & create data {result[0]}")
+                self.logger.info(f"Accept & create data {os.path.basename(result[0])}")
             else:
-                self.logger.info(f"Reject data {result[0]}")
+                self.logger.info(f"Reject data {os.path.basename(result[0])}")
             _results.append(result[0])
 
-        results = self.match_sh_order(paths, results)
+        results = self.match_sh_order(paths, _results)
 
         return results
 

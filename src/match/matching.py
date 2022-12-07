@@ -110,6 +110,7 @@ class MatchAV:
                     "data_num": 0,
                     "all_data": 0,
                     "sh_path": shape_path,
+                    "fps": fps,
                 }
 
             target = shape_result[start : end + 1]
